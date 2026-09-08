@@ -1,0 +1,7 @@
+# Presells geradas (imagens e páginas do usuário, não fazem parte do código)
+saidas/*
+!saidas/.gitkeep
+
+node_modules/
+*.log
+.DS_Store

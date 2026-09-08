@@ -1,0 +1,398 @@
+{
+ "paises": [
+  {
+   "code": "al",
+   "nome": "Albânia [AL]"
+  },
+  {
+   "code": "de",
+   "nome": "Alemanha [DE]"
+  },
+  {
+   "code": "ad",
+   "nome": "Andorra [AD]"
+  },
+  {
+   "code": "ar",
+   "nome": "Argentina [AR]"
+  },
+  {
+   "code": "au",
+   "nome": "Austrália [AU]"
+  },
+  {
+   "code": "at",
+   "nome": "Áustria [AT]"
+  },
+  {
+   "code": "be",
+   "nome": "Bélgica [BE]"
+  },
+  {
+   "code": "by",
+   "nome": "Bielorrússia [BY]"
+  },
+  {
+   "code": "ba",
+   "nome": "Bósnia e Herzegovina [BA]"
+  },
+  {
+   "code": "br",
+   "nome": "Brasil [BR]"
+  },
+  {
+   "code": "bg",
+   "nome": "Bulgária [BG]"
+  },
+  {
+   "code": "ca",
+   "nome": "Canadá [CA]"
+  },
+  {
+   "code": "cy",
+   "nome": "Chipre [CY]"
+  },
+  {
+   "code": "hr",
+   "nome": "Croácia [HR]"
+  },
+  {
+   "code": "dk",
+   "nome": "Dinamarca [DK]"
+  },
+  {
+   "code": "sk",
+   "nome": "Eslováquia [SK]"
+  },
+  {
+   "code": "si",
+   "nome": "Eslovênia [SI]"
+  },
+  {
+   "code": "es",
+   "nome": "Espanha [ES]"
+  },
+  {
+   "code": "us",
+   "nome": "Estados Unidos [US]"
+  },
+  {
+   "code": "ee",
+   "nome": "Estônia [EE]"
+  },
+  {
+   "code": "fi",
+   "nome": "Finlândia [FI]"
+  },
+  {
+   "code": "fr",
+   "nome": "França [FR]"
+  },
+  {
+   "code": "gr",
+   "nome": "Grécia [GR]"
+  },
+  {
+   "code": "nl",
+   "nome": "Holanda [NL]"
+  },
+  {
+   "code": "hu",
+   "nome": "Hungria [HU]"
+  },
+  {
+   "code": "ie",
+   "nome": "Irlanda [IE]"
+  },
+  {
+   "code": "is",
+   "nome": "Islândia [IS]"
+  },
+  {
+   "code": "il",
+   "nome": "Israel [IL]"
+  },
+  {
+   "code": "it",
+   "nome": "Itália [IT]"
+  },
+  {
+   "code": "lv",
+   "nome": "Letônia [LV]"
+  },
+  {
+   "code": "li",
+   "nome": "Liechtenstein [LI]"
+  },
+  {
+   "code": "lt",
+   "nome": "Lituânia [LT]"
+  },
+  {
+   "code": "lu",
+   "nome": "Luxemburgo [LU]"
+  },
+  {
+   "code": "mk",
+   "nome": "Macedônia do Norte [MK]"
+  },
+  {
+   "code": "mt",
+   "nome": "Malta [MT]"
+  },
+  {
+   "code": "mx",
+   "nome": "México [MX]"
+  },
+  {
+   "code": "md",
+   "nome": "Moldávia [MD]"
+  },
+  {
+   "code": "mc",
+   "nome": "Mônaco [MC]"
+  },
+  {
+   "code": "me",
+   "nome": "Montenegro [ME]"
+  },
+  {
+   "code": "no",
+   "nome": "Noruega [NO]"
+  },
+  {
+   "code": "nz",
+   "nome": "Nova Zelândia [NZ]"
+  },
+  {
+   "code": "pl",
+   "nome": "Polônia [PL]"
+  },
+  {
+   "code": "pt",
+   "nome": "Portugal [PT]"
+  },
+  {
+   "code": "gb",
+   "nome": "Reino Unido [GB]"
+  },
+  {
+   "code": "cz",
+   "nome": "República Tcheca [CZ]"
+  },
+  {
+   "code": "ro",
+   "nome": "Romênia [RO]"
+  },
+  {
+   "code": "ru",
+   "nome": "Rússia [RU]"
+  },
+  {
+   "code": "sm",
+   "nome": "San Marino [SM]"
+  },
+  {
+   "code": "rs",
+   "nome": "Sérvia [RS]"
+  },
+  {
+   "code": "se",
+   "nome": "Suécia [SE]"
+  },
+  {
+   "code": "ch",
+   "nome": "Suíça [CH]"
+  },
+  {
+   "code": "ua",
+   "nome": "Ucrânia [UA]"
+  },
+  {
+   "code": "va",
+   "nome": "Vaticano [VA]"
+  }
+ ],
+ "idiomasPorPais": {
+  "ca": {
+   "en": "Inglês",
+   "fr": "Francês"
+  },
+  "us": {
+   "en": "Inglês"
+  },
+  "br": {
+   "pt": "Português"
+  },
+  "mx": {
+   "es": "Espanhol"
+  },
+  "ar": {
+   "es": "Espanhol"
+  },
+  "au": {
+   "en": "Inglês"
+  },
+  "nz": {
+   "en": "Inglês",
+   "mi": "Maori"
+  },
+  "il": {
+   "he": "Hebraico",
+   "ar": "Árabe"
+  },
+  "al": {
+   "sq": "Albanês"
+  },
+  "ad": {
+   "ca": "Catalão"
+  },
+  "at": {
+   "de": "Alemão"
+  },
+  "by": {
+   "be": "Bielorrusso",
+   "ru": "Russo"
+  },
+  "be": {
+   "nl": "Holandês",
+   "fr": "Francês",
+   "de": "Alemão"
+  },
+  "ba": {
+   "bs": "Bósnio",
+   "hr": "Croata",
+   "sr": "Sérvio"
+  },
+  "bg": {
+   "bg": "Búlgaro"
+  },
+  "hr": {
+   "hr": "Croata"
+  },
+  "cy": {
+   "el": "Grego",
+   "tr": "Turco"
+  },
+  "cz": {
+   "cs": "Tcheco"
+  },
+  "dk": {
+   "da": "Dinamarquês"
+  },
+  "ee": {
+   "et": "Estoniano"
+  },
+  "fi": {
+   "fi": "Finlandês",
+   "sv": "Sueco"
+  },
+  "fr": {
+   "fr": "Francês"
+  },
+  "de": {
+   "de": "Alemão"
+  },
+  "gr": {
+   "el": "Grego"
+  },
+  "hu": {
+   "hu": "Húngaro"
+  },
+  "is": {
+   "is": "Islandês"
+  },
+  "ie": {
+   "en": "Inglês",
+   "ga": "Irlandês"
+  },
+  "it": {
+   "it": "Italiano"
+  },
+  "lv": {
+   "lv": "Letão"
+  },
+  "li": {
+   "de": "Alemão"
+  },
+  "lt": {
+   "lt": "Lituano"
+  },
+  "lu": {
+   "lb": "Luxemburguês",
+   "fr": "Francês",
+   "de": "Alemão"
+  },
+  "mt": {
+   "mt": "Maltês",
+   "en": "Inglês"
+  },
+  "md": {
+   "ro": "Romeno"
+  },
+  "mc": {
+   "fr": "Francês"
+  },
+  "me": {
+   "sr": "Sérvio"
+  },
+  "nl": {
+   "nl": "Holandês"
+  },
+  "mk": {
+   "mk": "Macedônio"
+  },
+  "no": {
+   "no": "Norueguês"
+  },
+  "pl": {
+   "pl": "Polonês"
+  },
+  "pt": {
+   "pt": "Português"
+  },
+  "ro": {
+   "ro": "Romeno"
+  },
+  "ru": {
+   "ru": "Russo"
+  },
+  "sm": {
+   "it": "Italiano"
+  },
+  "rs": {
+   "sr": "Sérvio"
+  },
+  "sk": {
+   "sk": "Eslovaco"
+  },
+  "si": {
+   "sl": "Esloveno"
+  },
+  "es": {
+   "es": "Espanhol",
+   "ca": "Catalão",
+   "eu": "Basco",
+   "gl": "Galego"
+  },
+  "se": {
+   "sv": "Sueco"
+  },
+  "ch": {
+   "de": "Alemão",
+   "fr": "Francês",
+   "it": "Italiano",
+   "rm": "Romanche"
+  },
+  "ua": {
+   "uk": "Ucraniano"
+  },
+  "gb": {
+   "en": "Inglês"
+  },
+  "va": {
+   "it": "Italiano",
+   "la": "Latim"
+  }
+ }
+}

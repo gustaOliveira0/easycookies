@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Presell de Cookies</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍪</text></svg>">
+<style>
+  :root {
+    --fundo:      #090d12;
+    --fundo2:     #0d1319;
+    --painel:     #121a22;
+    --painel-alt: #172029;
+    --linha:      #212c37;
+    --linha-forte:#2c3a47;
+    --texto:      #e8eef4;
+    --suave:      #8b9bab;
+    --fraco:      #61717f;
+    --acento:     #4c8dff;
+    --acento2:    #8b6cff;
+    --verde:      #34d399;
+    --amarelo:    #fbbf24;
+    --vermelho:   #f87171;
+    --sombra:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    --raio:       14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(76,141,255,.10), transparent 60%),
+      radial-gradient(800px 500px at 92% 0%, rgba(139,108,255,.09), transparent 60%),
+      var(--fundo);
+    background-attachment: fixed;
+    color: var(--texto);
+    font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Ubuntu, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(76,141,255,.32); }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #26323e; border-radius: 20px; border: 3px solid var(--fundo); }
+  ::-webkit-scrollbar-thumb:hover { background: #33434f; }
+
+  /* ------------------------------------------------------------- cabeçalho */
+  header {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 13px;
+    padding: 0 26px; height: 62px;
+    background: rgba(9,13,18,.78);
+    backdrop-filter: saturate(160%) blur(14px);
+    border-bottom: 1px solid var(--linha);
+  }
+  .marca {
+    width: 34px; height: 34px; display: grid; place-items: center; font-size: 19px;
+    border-radius: 10px; background: linear-gradient(140deg, #1d2937, #141c25);
+    border: 1px solid var(--linha-forte); box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  header h1 { margin: 0; font-size: 15.5px; font-weight: 650; letter-spacing: -.01em; }
+  header .sub { color: var(--fraco); font-size: 12px; margin-top: -2px; }
+  header .direita { margin-left: auto; display: flex; align-items: center; gap: 9px; }
+  .status-ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 0 3px rgba(52,211,153,.16); }
+  .endereco { color: var(--suave); font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  /* ---------------------------------------------------------------- layout */
+  .layout {
+    display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 24px; padding: 24px 26px 60px; max-width: 1680px; margin: 0 auto; align-items: start;
+  }
+  @media (max-width: 1180px) { .layout { grid-template-columns: 1fr; } }
+
+  .cartao {
+    background: linear-gradient(180deg, var(--painel), var(--fundo2));
+    border: 1px solid var(--linha); border-radius: var(--raio);
+    margin-bottom: 20px; overflow: hidden; box-shadow: var(--sombra);
+  }
+  .cartao > .cabeca {
+    display: flex; align-items: center; gap: 11px;
+    padding: 14px 18px; background: rgba(255,255,255,.018);
+    border-bottom: 1px solid var(--linha);
+  }
+  .cartao > .cabeca .num {
+    width: 23px; height: 23px; flex: none; display: grid; place-items: center;
+    border-radius: 7px; font-size: 11.5px; font-weight: 700; color: #cfe0ff;
+    background: linear-gradient(140deg, rgba(76,141,255,.28), rgba(139,108,255,.20));
+    border: 1px solid rgba(76,141,255,.30);
+  }
+  .cartao > .cabeca h2 { margin: 0; font-size: 13.5px; font-weight: 620; letter-spacing: .005em; }
+  .cartao > .cabeca .nota { margin-left: auto; color: var(--fraco); font-size: 11.5px; }
+  .cartao > .corpo { padding: 18px; }
+
+  /* ---------------------------------------------------------------- campos */
+  .campo { margin-bottom: 15px; }
+  .campo:last-child { margin-bottom: 0; }
+  label { display: block; color: var(--suave); font-size: 12.5px; font-weight: 500; margin-bottom: 6px; }
+  label .req { color: var(--acento); }
+  .dica { color: var(--fraco); font-size: 11.5px; margin-top: 6px; line-height: 1.45; }
+
+  input[type=text], input[type=url], textarea, select {
+    width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: inherit; color: var(--texto);
+    background: #0b1117; border: 1px solid var(--linha-forte); border-radius: 9px;
+    outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  input::placeholder, textarea::placeholder { color: #4d5c69; }
+  input[type=text]:hover, input[type=url]:hover, textarea:hover, select:hover { border-color: #3a4a58; }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--acento); background: #0c141c; box-shadow: 0 0 0 3.5px rgba(76,141,255,.14);
+  }
+  textarea { resize: vertical; min-height: 82px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.6; }
+  select {
+    appearance: none; cursor: pointer; padding-right: 34px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b9bab' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grade2 > .campo { margin-bottom: 15px; }
+
+  /* cor */
+  .cor-caixa {
+    display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 6px;
+    background: #0b1117; border: 1px solid var(--linha-forte); border-radius: 9px; transition: border-color .15s;
+  }
+  .cor-caixa:hover { border-color: #3a4a58; }
+  .cor-caixa input[type=color] {
+    appearance: none; width: 34px; height: 30px; padding: 0; border: 0; border-radius: 7px;
+    background: none; cursor: pointer;
+  }
+  .cor-caixa input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+  .cor-caixa input[type=color]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,.18); border-radius: 7px; }
+  .cor-caixa .hex { font: 12px ui-monospace, Menlo, monospace; color: var(--suave); text-transform: uppercase; }
+
+  /* slider */
+  .slider-topo { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+  .slider-topo b {
+    font: 600 12px ui-monospace, Menlo, monospace; color: var(--texto);
+    background: #0b1117; border: 1px solid var(--linha-forte); border-radius: 6px; padding: 1px 7px;
+  }
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 5px; border-radius: 5px; background: #202c37; outline: none; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; cursor: pointer;
+    background: linear-gradient(140deg, var(--acento), var(--acento2));
+    border: 2px solid #0b1117; box-shadow: 0 0 0 1px var(--acento);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid #0b1117;
+    background: var(--acento); box-shadow: 0 0 0 1px var(--acento);
+  }
+
+  /* switch */
+  .switch { display: flex; align-items: center; gap: 11px; padding: 9px 0; cursor: pointer; user-select: none; }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch .trilho {
+    position: relative; flex: none; width: 38px; height: 22px; border-radius: 22px;
+    background: #202c37; border: 1px solid var(--linha-forte); transition: .18s;
+  }
+  .switch .trilho::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: #7b8b99; transition: .18s;
+  }
+  .switch input:checked + .trilho { background: rgba(76,141,255,.30); border-color: var(--acento); }
+  .switch input:checked + .trilho::after { left: 18px; background: var(--acento); }
+  .switch input:focus-visible + .trilho { box-shadow: 0 0 0 3.5px rgba(76,141,255,.16); }
+  .switch .rotulo { font-size: 13.5px; color: var(--texto); }
+  .switch .rotulo small { display: block; color: var(--fraco); font-size: 11.5px; }
+
+  /* --------------------------------------------------------------- upload */
+  .zonas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .zona {
+    position: relative; cursor: pointer; border-radius: 11px; padding: 14px 10px; min-height: 142px;
+    background: #0b1117; border: 1.5px dashed var(--linha-forte); transition: .16s;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center;
+  }
+  .zona:hover, .zona.sobre { border-color: var(--acento); background: #0d1620; transform: translateY(-1px); }
+  .zona.cheia { border-style: solid; border-color: rgba(52,211,153,.45); background: #0c1519; }
+  .zona .icone { font-size: 24px; line-height: 1; opacity: .9; }
+  .zona img.icone { width: 100%; max-width: 118px; height: 58px; object-fit: cover; object-position: top center; border-radius: 6px; border: 1px solid var(--linha-forte); }
+  .zona .nome { font-weight: 600; font-size: 12.5px; }
+  .zona .info { color: var(--fraco); font-size: 10.5px; word-break: break-all; line-height: 1.35; }
+  .zona .tirar {
+    position: absolute; top: 6px; right: 6px; width: 21px; height: 21px; display: none;
+    align-items: center; justify-content: center; border-radius: 6px; font-size: 13px; line-height: 1;
+    background: rgba(9,13,18,.85); border: 1px solid var(--linha-forte); color: var(--suave); cursor: pointer; padding: 0;
+  }
+  .zona.cheia .tirar { display: flex; }
+  .zona .tirar:hover { color: var(--vermelho); border-color: #5a2f34; }
+  .zona input[type=file] { display: none; }
+  .zona .selo {
+    position: absolute; top: 6px; left: 6px; width: 18px; height: 18px; display: none;
+    align-items: center; justify-content: center; border-radius: 50%; font-size: 10px; color: #06231a;
+    background: var(--verde); font-weight: 700;
+  }
+  .zona.cheia .selo { display: flex; }
+
+  /* -------------------------------------------------------------- botões */
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 9px; }
+  .btn-principal {
+    width: 100%; padding: 13px 20px; font-size: 14.5px; font-weight: 650; color: #fff;
+    background: linear-gradient(135deg, var(--acento), var(--acento2));
+    box-shadow: 0 6px 20px -8px rgba(76,141,255,.75); transition: .15s;
+  }
+  .btn-principal:hover:not(:disabled) { filter: brightness(1.09); transform: translateY(-1px); }
+  .btn-principal:disabled { background: #1b242e; color: var(--fraco); box-shadow: none; cursor: not-allowed; }
+  .btn-fantasma {
+    background: #101820; border: 1px solid var(--linha-forte); color: var(--texto);
+    font-size: 12.5px; font-weight: 550; padding: 7px 13px; transition: .15s;
+  }
+  .btn-fantasma:hover { border-color: var(--acento); color: #cfe0ff; }
+  .btn-perigo {
+    background: transparent; border: 1px solid #3a2a2f; color: #d08b8b;
+    font-size: 12.5px; font-weight: 550; padding: 7px 13px; transition: .15s;
+  }
+  .btn-perigo:hover { background: rgba(248,113,113,.09); border-color: #5a2f34; color: var(--vermelho); }
+
+  .recado { margin-top: 13px; font-size: 13px; min-height: 20px; }
+  .recado a { color: var(--acento); font-weight: 550; }
+  .erro   { color: var(--vermelho); }
+  .ok     { color: var(--verde); }
+  .aviso  { color: var(--amarelo); font-size: 12.5px; margin-top: -6px; margin-bottom: 12px;
+            background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.22);
+            border-radius: 8px; padding: 8px 11px; }
+
+  /* ------------------------------------------------------------- preview */
+  .coluna-direita { position: sticky; top: 86px; }
+  .abas { margin-left: auto; display: flex; gap: 3px; background: #0b1117; border: 1px solid var(--linha-forte); border-radius: 9px; padding: 3px; }
+  .aba {
+    background: none; color: var(--suave); border-radius: 6px; padding: 5px 11px;
+    font-size: 12px; font-weight: 550; transition: .15s;
+  }
+  .aba:hover { color: var(--texto); }
+  .aba.ativa { background: linear-gradient(135deg, var(--acento), var(--acento2)); color: #fff; }
+
+  .palco {
+    background:
+      linear-gradient(135deg, rgba(76,141,255,.05), rgba(139,108,255,.05)),
+      repeating-linear-gradient(45deg, #0a1015 0 10px, #0b1218 10px 20px);
+    border: 1px solid var(--linha); border-radius: 11px; padding: 16px;
+    display: flex; justify-content: center; align-items: flex-start; overflow: hidden;
+    transition: height .2s;
+  }
+  .moldura {
+    flex: none;                      /* sem isso o flex encolhe a moldura e corta a prévia */
+    transform-origin: top center; border-radius: 10px; overflow: hidden; background: #fff;
+    box-shadow: 0 18px 50px -18px rgba(0,0,0,.9), 0 0 0 1px var(--linha-forte);
+  }
+  .cromo {
+    display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px;
+    background: #1b2530; border-bottom: 1px solid #253141;
+  }
+  .cromo .bolinha { width: 9px; height: 9px; border-radius: 50%; }
+  .cromo .barra {
+    flex: 1; height: 17px; border-radius: 20px; background: #111a22; margin-left: 6px;
+    display: flex; align-items: center; padding: 0 10px; color: #6d7d8c;
+    font: 10.5px ui-monospace, Menlo, monospace; overflow: hidden; white-space: nowrap;
+  }
+  .moldura iframe { border: 0; display: block; background: #fff; }
+  .vazio { color: var(--fraco); text-align: center; padding: 70px 24px; font-size: 13px; line-height: 1.7; }
+  .vazio .grande { font-size: 30px; display: block; margin-bottom: 10px; opacity: .55; }
+
+  /* --------------------------------------------------------------- lista */
+  .item {
+    display: flex; align-items: center; gap: 13px; padding: 12px;
+    border: 1px solid var(--linha); border-radius: 11px; background: #0d141b; margin-bottom: 9px;
+    transition: .15s;
+  }
+  .item:hover { border-color: var(--linha-forte); background: #0f171f; }
+  .item:last-child { margin-bottom: 0; }
+  .item .capa {
+    width: 62px; height: 44px; flex: none; border-radius: 7px; object-fit: cover; object-position: top center;
+    border: 1px solid var(--linha-forte); background: #0b1117;
+  }
+  .item .meio { min-width: 0; flex: 1; }
+  .item .titulo { font-weight: 600; font-size: 13.5px; color: var(--texto); text-decoration: none; display: block; }
+  .item .titulo:hover { color: var(--acento); }
+  .item .linha-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .pill {
+    background: #101820; border: 1px solid var(--linha-forte); border-radius: 20px;
+    padding: 1.5px 9px; font-size: 10.5px; color: var(--suave);
+  }
+  .pill.destaque { color: #cfe0ff; border-color: rgba(76,141,255,.35); background: rgba(76,141,255,.10); }
+  .item .acoes { display: flex; gap: 6px; flex: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="marca">🍪</span>
+  <div>
+    <h1>Gerador de Presell de Cookies</h1>
+    <div class="sub">popup de consentimento sobre o print do site</div>
+  </div>
+  <div class="direita">
+    <span class="status-ponto"></span>
+    <span class="endereco" id="rodape-porta"></span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============================ COLUNA ESQUERDA: FORMULÁRIO ============================ -->
+  <div>
+    <div class="cartao">
+      <div class="cabeca"><span class="num">1</span><h2>Destino e identificação</h2></div>
+      <div class="corpo">
+        <div class="campo">
+          <label for="linkafiliado">Link de afiliado <span class="req">*</span></label>
+          <input type="url" id="linkafiliado" placeholder="https://..." autocomplete="off">
+          <div class="dica">Os dois botões do popup — aceitar e recusar — levam para este link.</div>
+        </div>
+
+        <div class="campo">
+          <label for="titulo">Título da página</label>
+          <input type="text" id="titulo" maxlength="255" placeholder="Ex.: KatuChef — Titanium Cutting Board">
+        </div>
+
+        <div class="campo">
+          <label for="metadescricao">Meta descrição</label>
+          <input type="text" id="metadescricao" maxlength="255" placeholder="Descrição que aparece no Google">
+        </div>
+
+        <div class="grade2">
+          <div class="campo"><label for="pais">País</label><select id="pais"></select></div>
+          <div class="campo"><label for="idioma">Idioma</label><select id="idioma"><option value="">—</option></select></div>
+        </div>
+        <div id="aviso-idioma"></div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cabeca"><span class="num">2</span><h2>Imagens do site</h2><span class="nota">fundo borrado</span></div>
+      <div class="corpo">
+        <div class="zonas">
+          <div class="zona" data-campo="desktop">
+            <span class="selo">✓</span><button class="tirar" title="Remover">×</button>
+            <span class="icone">🖥️</span><span class="nome">Desktop</span><span class="info">≥ 1025px</span>
+            <input type="file" accept="image/*">
+          </div>
+          <div class="zona" data-campo="tablet">
+            <span class="selo">✓</span><button class="tirar" title="Remover">×</button>
+            <span class="icone">📱</span><span class="nome">Tablet</span><span class="info">768–1024px</span>
+            <input type="file" accept="image/*">
+          </div>
+          <div class="zona" data-campo="mobile">
+            <span class="selo">✓</span><button class="tirar" title="Remover">×</button>
+            <span class="icone">📲</span><span class="nome">Celular</span><span class="info">≤ 767px</span>
+            <input type="file" accept="image/*">
+          </div>
+        </div>
+        <div class="dica" style="margin-bottom:16px">Clique ou arraste os prints. Formato recomendado: .webp ou .jpg.</div>
+
+        <div class="zonas" style="grid-template-columns: 1fr 2fr; align-items: start;">
+          <div class="zona" data-campo="favicon" style="min-height:118px">
+            <span class="selo">✓</span><button class="tirar" title="Remover">×</button>
+            <span class="icone">⭐</span><span class="nome">Favicon</span><span class="info">opcional</span>
+            <input type="file" accept="image/*,.ico">
+          </div>
+          <div>
+            <div class="campo">
+              <div class="slider-topo"><label for="blur" style="margin:0">Desfoque do fundo</label><b id="blur-valor">3px</b></div>
+              <input type="range" id="blur" min="0" max="12" step="1" value="3">
+            </div>
+            <div class="campo" style="margin-bottom:0">
+              <div class="slider-topo"><label for="opacidade" style="margin:0">Escurecimento do fundo</label><b id="opacidade-valor">50%</b></div>
+              <input type="range" id="opacidade" min="0" max="90" step="5" value="50">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cabeca"><span class="num">3</span><h2>Aparência do popup</h2></div>
+      <div class="corpo">
+        <div class="grade2">
+          <div class="campo">
+            <label for="corbotaook">Botão esquerdo — cor</label>
+            <div class="cor-caixa"><input type="color" id="corbotaook" value="#009900"><span class="hex">#009900</span></div>
+          </div>
+          <div class="campo">
+            <label for="corbotaonok">Botão direito — cor</label>
+            <div class="cor-caixa"><input type="color" id="corbotaonok" value="#6c757d"><span class="hex">#6C757D</span></div>
+          </div>
+          <div class="campo">
+            <label for="cortextook">Cor do texto (esquerdo)</label>
+            <select id="cortextook"><option value="white">Branco</option><option value="black">Preto</option></select>
+          </div>
+          <div class="campo">
+            <label for="cortextonok">Cor do texto (direito)</label>
+            <select id="cortextonok"><option value="white">Branco</option><option value="black">Preto</option></select>
+          </div>
+          <div class="campo">
+            <label for="bordaok">Borda (esquerdo)</label>
+            <select id="bordaok"><option value="0">Sem borda</option><option value="1">1px</option><option value="2">2px</option><option value="3">3px</option></select>
+          </div>
+          <div class="campo">
+            <label for="bordanok">Borda (direito)</label>
+            <select id="bordanok"><option value="0">Sem borda</option><option value="1">1px</option><option value="2">2px</option><option value="3">3px</option></select>
+          </div>
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" id="editartextos"><span class="trilho"></span>
+          <span class="rotulo">Editar os textos do popup<small>por padrão vêm prontos no idioma escolhido</small></span>
+        </label>
+
+        <div id="campos-textos" hidden style="margin-top:8px">
+          <div class="campo">
+            <label for="titulopopup">Título do popup</label>
+            <input type="text" id="titulopopup">
+          </div>
+          <div class="campo">
+            <label for="textopopup">Texto do popup</label>
+            <textarea id="textopopup" rows="3" style="font-family:inherit;font-size:13.5px"></textarea>
+          </div>
+          <div class="grade2">
+            <div class="campo" style="margin-bottom:0"><label for="botaook">Botão aceitar</label><input type="text" id="botaook"></div>
+            <div class="campo" style="margin-bottom:0"><label for="botaonok">Botão recusar</label><input type="text" id="botaonok"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cabeca"><span class="num">4</span><h2>Políticas, SEO e rastreamento</h2></div>
+      <div class="corpo">
+        <label class="switch">
+          <input type="checkbox" id="politica" checked><span class="trilho"></span>
+          <span class="rotulo">Link de Política de Privacidade<small>texto pronto no idioma, abre em modal</small></span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="termos" checked><span class="trilho"></span>
+          <span class="rotulo">Link de Termos de Uso<small>texto pronto no idioma, abre em modal</small></span>
+        </label>
+
+        <div class="campo" style="margin-top:14px">
+          <label for="seo">Conteúdo de SEO (HTML)</label>
+          <textarea id="seo" rows="4" placeholder="&lt;h2&gt;Sobre o produto&lt;/h2&gt;&lt;p&gt;...&lt;/p&gt;"></textarea>
+          <div class="dica">Aparece no modal do link “Learn More”.</div>
+        </div>
+
+        <div class="campo">
+          <label for="taggoogle">Esquema Markup</label>
+          <textarea id="taggoogle" rows="4" placeholder="Cole o script inteiro"></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="rastreamento">Código de rastreamento extra</label>
+          <textarea id="rastreamento" rows="4" placeholder="Pixel, GTM, etc."></textarea>
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" id="pastapais"><span class="trilho"></span>
+          <span class="rotulo">No ZIP, usar pasta do país<small>ex.: us/index.html</small></span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="pastaidioma"><span class="trilho"></span>
+          <span class="rotulo">…e subpasta do idioma<small>ex.: us/en/index.html</small></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cabeca"><span class="num">5</span><h2>Gerar</h2></div>
+      <div class="corpo">
+        <button class="btn-principal" id="btn-gerar">Gerar presell</button>
+        <div class="recado" id="status-gerar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ COLUNA DIREITA: PREVIEW + LISTA ============================ -->
+  <div class="coluna-direita">
+    <div class="cartao">
+      <div class="cabeca">
+        <h2>Pré-visualização</h2>
+        <div class="abas">
+          <button class="aba ativa" data-disp="desktop">Desktop</button>
+          <button class="aba" data-disp="tablet">Tablet</button>
+          <button class="aba" data-disp="mobile">Celular</button>
+        </div>
+      </div>
+      <div class="corpo">
+        <div class="palco" id="palco">
+          <div class="vazio" id="preview-vazio">
+            <span class="grande">🖼️</span>
+            Envie ao menos a imagem de desktop<br>para ver a prévia da página.
+          </div>
+          <div class="moldura" id="moldura" hidden>
+            <div class="cromo">
+              <span class="bolinha" style="background:#ff5f57"></span>
+              <span class="bolinha" style="background:#febc2e"></span>
+              <span class="bolinha" style="background:#28c840"></span>
+              <span class="barra" id="cromo-url">sua-presell.com</span>
+            </div>
+            <iframe id="quadro" title="Pré-visualização"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cabeca"><h2>Presells geradas</h2><span class="nota" id="contador"></span></div>
+      <div class="corpo"><div id="lista"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const imagens = {};          // { desktop|tablet|mobile|favicon: dataURL }
+let TEXTOS = {}, PAISES = [], IDIOMAS_POR_PAIS = {};
+
+/* ------------------------------------------------------------------ carregar */
+async function iniciar() {
+  const d = await (await fetch('/api/dados')).json();
+  PAISES = d.paises; IDIOMAS_POR_PAIS = d.idiomasPorPais; TEXTOS = d.textos;
+
+  $('#pais').innerHTML = PAISES.map((p) => `<option value="${p.code}">${p.nome}</option>`).join('');
+  $('#pais').value = 'us';
+  atualizaIdiomas();
+  $('#rodape-porta').textContent = location.host;
+  await carregaLista();
+  agendaPreview();
+}
+
+function atualizaIdiomas() {
+  const pais = $('#pais').value;
+  const langs = IDIOMAS_POR_PAIS[pais] || {};
+  $('#idioma').innerHTML = Object.entries(langs)
+    .map(([c, n]) => `<option value="${c}">${n} [${c}]</option>`).join('') || '<option value="en">Inglês [en]</option>';
+  aoTrocarIdioma();
+}
+
+function aoTrocarIdioma() {
+  const l = $('#idioma').value;
+  const t = TEXTOS[l];
+  $('#aviso-idioma').innerHTML = t ? ''
+    : '<div class="aviso">⚠ Sem tradução pronta para este idioma — a página sai em inglês.</div>';
+  const base = t || TEXTOS.en;
+  if (!$('#editartextos').checked) {
+    $('#titulopopup').value = base.tituloPopup;
+    $('#textopopup').value  = base.textoPopup;
+    $('#botaook').value     = base.botaoOk;
+    $('#botaonok').value    = base.botaoNok;
+  }
+  agendaPreview();
+}
+
+/* -------------------------------------------------------------------- upload */
+document.querySelectorAll('.zona').forEach((zona) => {
+  const campo = zona.dataset.campo;
+  const input = zona.querySelector('input[type=file]');
+  const tirar = zona.querySelector('.tirar');
+
+  zona.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => input.files[0] && recebeArquivo(zona, campo, input.files[0]));
+
+  tirar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    delete imagens[campo];
+    input.value = '';
+    zona.classList.remove('cheia');
+    zona.querySelector('.icone').outerHTML = `<span class="icone">${zona.dataset.emoji}</span>`;
+    zona.querySelector('.info').textContent = zona.dataset.info;
+    agendaPreview();
+  });
+
+  zona.dataset.emoji = zona.querySelector('.icone').textContent;
+  zona.dataset.info  = zona.querySelector('.info').textContent;
+
+  ['dragenter', 'dragover'].forEach((ev) => zona.addEventListener(ev, (e) => {
+    e.preventDefault(); zona.classList.add('sobre');
+  }));
+  ['dragleave', 'drop'].forEach((ev) => zona.addEventListener(ev, (e) => {
+    e.preventDefault(); zona.classList.remove('sobre');
+  }));
+  zona.addEventListener('drop', (e) => {
+    const f = e.dataTransfer.files[0];
+    if (f) recebeArquivo(zona, campo, f);
+  });
+});
+
+function recebeArquivo(zona, campo, arquivo) {
+  const leitor = new FileReader();
+  leitor.onload = () => {
+    imagens[campo] = leitor.result;
+    const kb = Math.round(arquivo.size / 1024);
+    zona.classList.add('cheia');
+    zona.querySelector('.icone').outerHTML = `<img class="icone" src="${leitor.result}" alt="">`;
+    zona.querySelector('.info').textContent = `${arquivo.name.slice(0, 16)} · ${kb} KB`;
+    agendaPreview();
+  };
+  leitor.readAsDataURL(arquivo);
+}
+
+/* -------------------------------------------------------------- configuração */
+function montaConfig() {
+  return {
+    titulo: $('#titulo').value.trim(),
+    metaDescricao: $('#metadescricao').value.trim(),
+    linkAfiliado: $('#linkafiliado').value.trim(),
+    pais: $('#pais').value,
+    idioma: $('#idioma').value || 'en',
+    tituloPopup: $('#titulopopup').value.trim(),
+    textoPopup: $('#textopopup').value.trim(),
+    botaoOk: $('#botaook').value.trim(),
+    botaoNok: $('#botaonok').value.trim(),
+    corBotaoOk: $('#corbotaook').value,
+    corBotaoNok: $('#corbotaonok').value,
+    corTextoOk: $('#cortextook').value,
+    corTextoNok: $('#cortextonok').value,
+    bordaOk: $('#bordaok').value,
+    bordaNok: $('#bordanok').value,
+    blur: $('#blur').value,
+    opacidadeFundo: $('#opacidade').value,
+    politica: $('#politica').checked,
+    termos: $('#termos').checked,
+    seo: $('#seo').value,
+    tagGoogle: $('#taggoogle').value,
+    rastreamento: $('#rastreamento').value,
+    pastaPais: $('#pastapais').checked,
+    pastaIdioma: $('#pastaidioma').checked,
+  };
+}
+
+/* ------------------------------------------------------------------- preview */
+const LARGURAS = { desktop: 1280, tablet: 820, mobile: 390 };
+const ALTURAS  = { desktop: 720,  tablet: 640, mobile: 720 };
+const CROMO    = 31;
+let dispositivo = 'desktop', tarefa = null;
+
+document.querySelectorAll('.aba').forEach((aba) => aba.addEventListener('click', () => {
+  document.querySelectorAll('.aba').forEach((a) => a.classList.remove('ativa'));
+  aba.classList.add('ativa');
+  dispositivo = aba.dataset.disp;
+  agendaPreview();
+}));
+
+function agendaPreview() {
+  clearTimeout(tarefa);
+  tarefa = setTimeout(atualizaPreview, 250);
+}
+
+async function atualizaPreview() {
+  if (!imagens.desktop) { $('#preview-vazio').hidden = false; $('#moldura').hidden = true; $('#palco').style.height = ''; return; }
+  $('#preview-vazio').hidden = true; $('#moldura').hidden = false;
+
+  const cfg = montaConfig();
+  if (!cfg.linkAfiliado) cfg.linkAfiliado = '#';
+
+  const r = await fetch('/api/preview', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ config: cfg, imagens }),
+  });
+  const html = await r.text();
+
+  const largura = LARGURAS[dispositivo], altura = ALTURAS[dispositivo];
+  const disponivel = $('#palco').clientWidth - 32;
+  const escala = Math.min(1, disponivel / largura);
+
+  $('#cromo-url').textContent = `sua-presell.com  ·  ${largura} × ${altura}`;
+
+  const moldura = $('#moldura'), quadro = $('#quadro');
+  quadro.style.width = largura + 'px';
+  quadro.style.height = altura + 'px';
+  moldura.style.width = largura + 'px';
+  moldura.style.transform = `scale(${escala})`;
+  $('#palco').style.height = ((altura + CROMO) * escala + 32) + 'px';
+  quadro.srcdoc = html;
+}
+
+/* --------------------------------------------------------------------- gerar */
+$('#btn-gerar').addEventListener('click', async () => {
+  const cfg = montaConfig();
+  const status = $('#status-gerar');
+
+  if (!/^https?:\/\//i.test(cfg.linkAfiliado)) {
+    status.className = 'recado erro'; status.textContent = '⚠ Informe o link de afiliado (com https://).'; return;
+  }
+  for (const [campo, rotulo] of [['desktop', 'desktop'], ['tablet', 'tablet'], ['mobile', 'celular']]) {
+    if (!imagens[campo]) { status.className = 'recado erro'; status.textContent = `⚠ Falta a imagem de ${rotulo}.`; return; }
+  }
+
+  $('#btn-gerar').disabled = true;
+  status.className = 'recado'; status.textContent = 'Gerando…';
+  try {
+    const r = await fetch('/api/gerar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: cfg, imagens }),
+    });
+    const res = await r.json();
+    if (!res.ok) throw new Error(res.erro || 'Falha ao gerar');
+    status.className = 'recado ok';
+    status.innerHTML = `✓ Pronto! <a href="/p/${res.slug}/" target="_blank">abrir página</a> · <a href="/download/${res.slug}.zip">baixar .zip</a>`;
+    await carregaLista();
+  } catch (e) {
+    status.className = 'recado erro'; status.textContent = '⚠ ' + e.message;
+  } finally {
+    $('#btn-gerar').disabled = false;
+  }
+});
+
+/* ---------------------------------------------------------------- lista */
+async function carregaLista() {
+  const itens = await (await fetch('/api/presells')).json();
+  $('#contador').textContent = itens.length ? `${itens.length} página${itens.length > 1 ? 's' : ''}` : '';
+  if (!itens.length) {
+    $('#lista').innerHTML = '<div class="vazio"><span class="grande">📂</span>Nenhuma presell gerada ainda.</div>';
+    return;
+  }
+  $('#lista').innerHTML = itens.map((i) => `
+    <div class="item">
+      <img class="capa" src="/p/${i.slug}/${(i.arquivos && i.arquivos.desktop) || ''}" alt="" onerror="this.style.visibility='hidden'">
+      <div class="meio">
+        <a class="titulo" href="/p/${i.slug}/" target="_blank">${i.titulo || i.slug}</a>
+        <div class="linha-meta">
+          <span class="pill destaque">${(i.pais || '').toUpperCase()} · ${i.idioma || ''}</span>
+          <span class="pill">${i.slug}</span>
+          <span class="pill">${new Date(i.criadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+        </div>
+      </div>
+      <div class="acoes">
+        <a href="/download/${i.slug}.zip"><button class="btn-fantasma">↓ ZIP</button></a>
+        <button class="btn-perigo" onclick="apagar('${i.slug}')">Excluir</button>
+      </div>
+    </div>`).join('');
+}
+
+async function apagar(slug) {
+  await fetch('/api/presells/' + slug, { method: 'DELETE' });
+  carregaLista();
+}
+
+/* ---------------------------------------------------------------- eventos */
+$('#pais').addEventListener('change', atualizaIdiomas);
+$('#idioma').addEventListener('change', aoTrocarIdioma);
+$('#editartextos').addEventListener('change', (e) => {
+  $('#campos-textos').hidden = !e.target.checked;
+  if (!e.target.checked) aoTrocarIdioma();
+});
+$('#blur').addEventListener('input', (e) => { $('#blur-valor').textContent = e.target.value + 'px'; });
+$('#opacidade').addEventListener('input', (e) => { $('#opacidade-valor').textContent = e.target.value + '%'; });
+document.querySelectorAll('input[type=color]').forEach((c) => {
+  c.addEventListener('input', () => { c.nextElementSibling.textContent = c.value.toUpperCase(); });
+});
+document.querySelectorAll('input, select, textarea').forEach((el) => {
+  el.addEventListener('input', agendaPreview);
+  el.addEventListener('change', agendaPreview);
+});
+window.addEventListener('resize', agendaPreview);
+
+iniciar();
+</script>
+</body>
+</html>

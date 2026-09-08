@@ -1,0 +1,8 @@
+{
+  "name": "presell-cookies",
+  "version": "1.0.0",
+  "description": "Gerador de presell de cookies (popup de consentimento sobre print borrado do site, com botoes indo para o link de afiliado)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "license": "UNLICENSED"
+}
