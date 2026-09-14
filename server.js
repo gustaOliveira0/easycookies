@@ -7,6 +7,8 @@ const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const os   = require('os');
+const { execFile } = require('child_process');
 
 const PORT     = process.env.PORT || 7001;
 const RAIZ     = __dirname;
@@ -15,6 +17,7 @@ const DIR_PUB  = path.join(RAIZ, 'public');
 
 const IDIOMAS = JSON.parse(fs.readFileSync(path.join(RAIZ, 'data/idiomas.json'), 'utf8'));
 const PAISES  = JSON.parse(fs.readFileSync(path.join(RAIZ, 'data/paises.json'), 'utf8'));
+const SEO     = JSON.parse(fs.readFileSync(path.join(RAIZ, 'data/seo.json'), 'utf8'));
 
 const MIMES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -372,6 +375,328 @@ function zipDePresell(slug) {
   return montaZip(arquivos);
 }
 
+/* ------------------------------------------------------------------ gera seo */
+
+/** Moeda de cada pais atendido, para formatar o preco. */
+const MOEDAS = {
+  al: 'ALL', de: 'EUR', ad: 'EUR', ar: 'ARS', au: 'AUD', at: 'EUR', be: 'EUR', by: 'BYN',
+  ba: 'BAM', br: 'BRL', bg: 'BGN', ca: 'CAD', cy: 'EUR', hr: 'EUR', dk: 'DKK', sk: 'EUR',
+  si: 'EUR', es: 'EUR', us: 'USD', ee: 'EUR', fi: 'EUR', fr: 'EUR', gr: 'EUR', nl: 'EUR',
+  hu: 'HUF', ie: 'EUR', is: 'ISK', il: 'ILS', it: 'EUR', lv: 'EUR', li: 'CHF', lt: 'EUR',
+  lu: 'EUR', mk: 'MKD', mt: 'EUR', mx: 'MXN', md: 'MDL', mc: 'EUR', me: 'EUR', no: 'NOK',
+  nz: 'NZD', pl: 'PLN', pt: 'EUR', gb: 'GBP', cz: 'CZK', ro: 'RON', ru: 'RUB', sm: 'EUR',
+  rs: 'RSD', se: 'SEK', ch: 'CHF', ua: 'UAH', va: 'EUR',
+};
+
+/**
+ * Extrai o numero do preco digitado, para o markup: "R$ 1.290,90" e "$1,290.90" viram
+ * 1290.90, "29.99" vira 29.99 e "1.290" vira 1290. O separador decimal e o ultimo ponto
+ * ou virgula seguido de uma ou duas casas; o resto e separador de milhar.
+ */
+function precoNumerico(preco) {
+  const m = /\d[\d.,\s]*\d|\d/.exec(String(preco || ''));
+  if (!m) return '';
+  const bruto = m[0].replace(/\s/g, '');
+  const decimal = /[.,](\d{1,2})$/.exec(bruto);
+  if (!decimal) return bruto.replace(/[.,]/g, '');
+  const inteiro = bruto.slice(0, -decimal[0].length).replace(/[.,]/g, '');
+  return `${inteiro || '0'}.${decimal[1]}`;
+}
+
+/**
+ * Frase do pais no idioma da pagina, ja com preposicao e artigo ("no Brasil", "in der Schweiz").
+ * Usa a frase pronta do par pais+idioma; sem ela, encaixa o nome do ICU no padrao do idioma.
+ */
+function frasePais(pais, idioma) {
+  const cod = String(pais || '').toLowerCase();
+  if (!cod) return '';
+  const pronta = (SEO.locais[idioma] || {})[cod];
+  if (pronta) return pronta;
+  let nome = cod.toUpperCase();
+  try {
+    nome = new Intl.DisplayNames([idioma, 'en'], { type: 'region' }).of(nome) || nome;
+  } catch { /* ICU sem esse idioma: fica o codigo */ }
+  return (SEO.padraoPais[idioma] || '{pais}').replace('{pais}', nome);
+}
+
+/** Formata o preco na moeda escolhida quando so vem numero; senao devolve o que foi digitado. */
+function formataPreco(preco, pais, idioma, moedaEscolhida) {
+  const bruto = String(preco || '').trim();
+  if (!bruto) return '';
+  const so = bruto.replace(/\s/g, '');
+  if (!/^\d+([.,]\d{1,2})?$/.test(so)) return bruto;
+  const valor = Number(so.replace(',', '.'));
+  const moeda = String(moedaEscolhida || '').trim().toUpperCase()
+    || MOEDAS[String(pais || '').toLowerCase()];
+  if (!moeda) return bruto;
+  try {
+    return new Intl.NumberFormat(`${idioma}-${String(pais).toUpperCase()}`, {
+      style: 'currency', currency: moeda,
+    }).format(valor);
+  } catch { return `${valor} ${moeda}`; }
+}
+
+/**
+ * Monta o bloco de SEO (o conteudo do modal "Learn More"), o titulo da pagina e a meta
+ * descricao a partir dos dados do produto. Tudo sai no idioma escolhido, com o pais
+ * escrito nesse mesmo idioma.
+ */
+function geraSeo(d = {}) {
+  const idioma = SEO.textos[d.idioma] ? d.idioma : 'en';
+  const t      = SEO.textos[idioma];
+
+  const produto  = String(d.produto || '').trim();
+  const emPais   = frasePais(d.pais, idioma);
+  const preco    = formataPreco(d.preco, d.pais, idioma, d.moeda);
+  const garantia = String(d.garantia || '').trim();
+  const desconto = String(d.desconto || '').replace(/\D/g, ''); // campo livre: fica so o numero
+
+  if (!produto) throw new Error('Informe o nome do produto');
+
+  const troca = (s) => esc(String(s)
+    .replace(/\{produto\}/g, produto)
+    .replace(/\{emPais\}/g, emPais)
+    .replace(/\{preco\}/g, preco)
+    .replace(/\{garantia\}/g, garantia)
+    .replace(/\{desconto\}/g, desconto));
+
+  // Preco: com valor quando informado, senao a frase generica; o desconto entra depois.
+  const rPreco = [preco ? t.rPreco : t.rPrecoSem];
+  if (desconto) rPreco.push(t.rDesconto);
+
+  // Entrega: a frase base sempre, e o frete rapido por padrao; marcado, o gratis toma o lugar.
+  const rEntrega = [emPais ? t.rEntrega : ''];
+  rEntrega.push(d.freteGratis ? t.rFreteGratis : t.rFreteRapido);
+
+  const faq = [
+    [t.qProduto,  [t.rProduto]],
+    [t.qPreco,    rPreco],
+    [t.qGarantia, [garantia ? t.rGarantia : t.rGarantiaSem]],
+    [t.qEntrega,  rEntrega],
+    [t.qOnde,     [t.rOnde]],
+  ];
+
+  const linhas = [
+    `<h2>${troca(t.tituloSobre)}</h2>`,
+    `<p>${troca(t.sobre)}</p>`,
+    `<h2>${troca(t.tituloFaq)}</h2>`,
+  ];
+  for (const [pergunta, respostas] of faq) {
+    linhas.push(`<h3>${troca(pergunta)}</h3>`);
+    linhas.push(`<p>${troca(respostas.filter(Boolean).join(' '))}</p>`);
+  }
+
+  // Titulo e meta vao para campos de texto, entao seguem sem escape de HTML.
+  const simples = (str) => String(str)
+    .replace(/\{produto\}/g, produto)
+    .replace(/\{emPais\}/g, emPais)
+    .replace(/\{preco\}/g, preco)
+    .replace(/\{garantia\}/g, garantia)
+    .replace(/\{desconto\}/g, desconto)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Os mesmos dados do bloco acima entram no titulo e na meta, na ordem de apelo.
+  const pedacos = [];
+  if (preco) pedacos.push(preco);
+  if (desconto) pedacos.push(simples(t.fDesconto));
+  pedacos.push(simples(d.freteGratis ? t.fFreteGratis : t.fFreteRapido));
+  if (garantia) pedacos.push(simples(t.fGarantia));
+
+  // Titulo no formato "Produto OFICIAL BR: Economize ate 40% – Preco especial R$ 197 + 90 dias
+  // de garantia". Cada parte so entra se o dado foi preenchido e se ainda couber.
+  const sigla = (SEO.siglas[String(d.pais || '').toLowerCase()] || String(d.pais || '')).toUpperCase();
+  // Garantia e frete vem em caixa de frase, porque a meta tambem os usa; no titulo sobem
+  // de caixa, e em ingles sobe cada palavra, como manda o costume do idioma.
+  const porPalavra = SEO.tituloEmMaiusculas.includes(idioma);
+  const enfase = (str) => (porPalavra
+    ? str.replace(/(^|[\s-])(\p{L})/gu, (todo, antes, letra) => antes + letra.toUpperCase())
+    : str.charAt(0).toUpperCase() + str.slice(1));
+
+  const caudas = [];
+  if (desconto) caudas.push(simples(t.fEconomize));
+  if (preco) caudas.push(`${simples(t.fPrecoEspecial)} ${preco}`);
+  if (garantia) caudas.push(enfase(simples(t.fGarantia)));
+  if (d.freteGratis) caudas.push(enfase(simples(t.fFreteGratis)));
+
+  let titulo = [produto, t.fOficial, sigla].filter(Boolean).join(' ');
+  let postos = 0; // o separador depende de quantas partes entraram, nao da posicao na lista
+  for (const c of caudas) {
+    const tentativa = `${titulo}${postos === 0 ? ': ' : postos === 1 ? ' – ' : ' + '}${c}`;
+    if (tentativa.length > 110) continue;
+    titulo = tentativa;
+    postos++;
+  }
+
+  // A meta segue com o produto e o pais por extenso, e os mesmos dados em lista.
+  const base = simples(t.base);
+  const usados = [...pedacos];
+  const montaMeta = () => `${base}: ${usados.join(', ')}. ${simples(t.cta)}`;
+  let meta = montaMeta();
+  while (usados.length > 1 && meta.length > 155) { usados.pop(); meta = montaMeta(); }
+
+  return { seo: linhas.join('\n'), titulo, meta, markup: geraMarkup(d, { produto, meta, t }) };
+}
+
+/**
+ * Esquema markup do produto (JSON-LD). So entra o que foi preenchido: sem preco nao ha
+ * oferta, sem garantia nao ha WarrantyPromise, e o frete so aparece com valor conhecido.
+ */
+function geraMarkup(d, { produto, meta, t }) {
+  const valor = precoNumerico(d.preco);
+  const moeda = String(d.moeda || '').trim().toUpperCase()
+    || MOEDAS[String(d.pais || '').toLowerCase()] || '';
+
+  const json = { '@context': 'https://schema.org', '@type': 'Product', name: produto, description: meta };
+  if (!valor || !moeda) return JSON.stringify(json, null, 2);
+
+  const oferta = {
+    '@type': 'Offer',
+    priceCurrency: moeda,
+    price: valor,
+    itemCondition: 'https://schema.org/NewCondition',
+    availability: 'https://schema.org/InStock',
+  };
+  if (d.linkAfiliado) oferta.url = String(d.linkAfiliado).trim();
+
+  const desconto = String(d.desconto || '').replace(/\D/g, '');
+  if (desconto) {
+    oferta.priceSpecification = {
+      '@type': 'UnitPriceSpecification',
+      priceType: 'https://schema.org/SalePrice',
+      valueAddedTaxIncluded: true,
+      name: t.fDesconto.replace('{desconto}', desconto),
+    };
+  }
+
+  const garantia = String(d.garantia || '').replace(/\D/g, '');
+  if (garantia) oferta.warranty = { '@type': 'WarrantyPromise', durationOfWarranty: `P${garantia}D` };
+
+  oferta.seller = { '@type': 'Organization', name: `${produto} ${t.fLojaOficial}` };
+
+  const frete = d.freteGratis ? '0' : precoNumerico(d.custoFrete);
+  if (frete !== '') {
+    oferta.shippingDetails = {
+      '@type': 'OfferShippingDetails',
+      shippingRate: { '@type': 'MonetaryAmount', value: frete, currency: moeda },
+    };
+  }
+
+  json.offers = oferta;
+  return JSON.stringify(json, null, 2);
+}
+
+/* ------------------------------------------------------------- captura do site */
+
+/* Os prints saem do Chrome em modo headless, que ja esta na maquina: nenhuma janela
+   abre e nenhuma dependencia entra no projeto. */
+const PASTAS_WIN = [process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)'], process.env.LOCALAPPDATA].filter(Boolean);
+const NAVEGADORES = [
+  '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium',
+  '/usr/bin/chromium-browser', '/snap/bin/chromium', '/opt/google/chrome/chrome',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  ...PASTAS_WIN.map((p) => path.join(p, 'Google', 'Chrome', 'Application', 'chrome.exe')),
+  // Sem Chrome, o Edge (que vem no Windows) tira os mesmos prints.
+  '/usr/bin/microsoft-edge', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+  ...PASTAS_WIN.map((p) => path.join(p, 'Microsoft', 'Edge', 'Application', 'msedge.exe')),
+];
+
+function achaNavegador() {
+  const escolhido = process.env.CHROME || NAVEGADORES.find((c) => fs.existsSync(c));
+  if (!escolhido) throw new Error('Chrome (ou Edge) nao encontrado. Instale o Google Chrome ou aponte a variavel CHROME para o executavel.');
+  return escolhido;
+}
+
+const UA_TABLET  = 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/604.1';
+const UA_CELULAR = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+const TELAS = [
+  { campo: 'desktop', largura: 1440, altura: 900,  ua: '' },
+  { campo: 'tablet',  largura: 820,  altura: 1180, ua: UA_TABLET },
+  { campo: 'mobile',  largura: 390,  altura: 844,  ua: UA_CELULAR },
+];
+
+function rodaNavegador(argumentos) {
+  return new Promise((ok, erro) => {
+    execFile(achaNavegador(), argumentos, { timeout: 60000 }, (e, saida, err) => {
+      // O Chrome escreve avisos de GPU e de rede na saida de erro mesmo quando da certo.
+      if (e && e.killed) return erro(new Error('O site demorou demais para carregar'));
+      if (e && !/written to file/.test(String(err))) return erro(new Error('Falha ao abrir o site'));
+      ok();
+    });
+  });
+}
+
+/** Um print de uma tela, devolvido como dataURL. */
+async function print(url, tela, pasta) {
+  const arquivo = path.join(pasta, tela.campo + '.png');
+  const args = [
+    '--headless=new', '--disable-gpu', '--hide-scrollbars', '--mute-audio',
+    '--no-first-run', '--no-default-browser-check', '--disable-extensions',
+    '--user-data-dir=' + path.join(pasta, 'perfil'),
+    '--window-size=' + tela.largura + ',' + tela.altura,
+    '--screenshot=' + arquivo,
+  ];
+  if (tela.ua) args.push('--user-agent=' + tela.ua);
+  args.push(url);
+
+  await rodaNavegador(args);
+  if (!fs.existsSync(arquivo)) throw new Error('Nao consegui o print de ' + tela.campo);
+  return 'data:image/png;base64,' + fs.readFileSync(arquivo).toString('base64');
+}
+
+/** Favicon declarado no HTML da pagina; sem declaracao, tenta o /favicon.ico. */
+async function pegaFavicon(html, urlFinal) {
+  const tenta = async (endereco) => {
+    const r = await fetch(endereco, { redirect: 'follow' });
+    if (!r.ok) return null;
+    const tipo = (r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!tipo.startsWith('image/')) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (!buf.length) return null;
+    return 'data:' + tipo + ';base64,' + buf.toString('base64');
+  };
+
+  try {
+    const marcas = [...html.matchAll(/<link\b[^>]*>/gi)].map((m) => m[0])
+      .filter((tag) => /rel\s*=\s*["'][^"']*\bicon\b/i.test(tag));
+    for (const tag of marcas) {
+      const href = /href\s*=\s*["']([^"']+)["']/i.exec(tag);
+      if (!href) continue;
+      const achado = await tenta(new URL(href[1], urlFinal).href).catch(() => null);
+      if (achado) return achado;
+    }
+    return await tenta(new URL('/favicon.ico', urlFinal).href).catch(() => null);
+  } catch { return null; }
+}
+
+/** Os tres prints e o favicon de um endereco. */
+async function capturaSite(endereco) {
+  let url;
+  try { url = new URL(endereco); } catch { throw new Error('Endereco invalido'); }
+  if (!/^https?:$/.test(url.protocol)) throw new Error('Use um endereco http ou https');
+
+  let resposta;
+  try {
+    resposta = await fetch(url.href, { redirect: 'follow' });
+  } catch {
+    throw new Error('Nao consegui abrir o site. Confira o endereco.');
+  }
+  if (resposta.status >= 400) throw new Error('O site respondeu ' + resposta.status + '.');
+  const html = await resposta.text();
+
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'presell-print-'));
+  try {
+    const imagens = {};
+    for (const tela of TELAS) imagens[tela.campo] = await print(resposta.url, tela, pasta);
+    imagens.favicon = await pegaFavicon(html, resposta.url);
+    return imagens;
+  } finally {
+    fs.rmSync(pasta, { recursive: true, force: true });
+  }
+}
+
 /* --------------------------------------------------------------------- rotas */
 
 function serveArquivo(res, arquivo, download) {
@@ -403,6 +728,7 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, 200, {
         paises: PAISES.paises,
         idiomasPorPais: PAISES.idiomasPorPais,
+        moedas: MOEDAS,
         textos: Object.fromEntries(Object.entries(IDIOMAS).map(([k, v]) => [k, {
           tituloPopup: v.tituloPopup, textoPopup: v.textoPopup,
           botaoOk: v.botaoOk, botaoNok: v.botaoNok, linkSeo: v.linkSeo,
@@ -425,6 +751,16 @@ const servidor = http.createServer(async (req, res) => {
       const buf = Buffer.from(html, 'utf8');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
       return res.end(buf);
+    }
+
+    if (rota === '/api/capturar' && req.method === 'POST') {
+      const corpo = JSON.parse((await lerCorpo(req)).toString('utf8'));
+      return json(res, 200, { ok: true, imagens: await capturaSite(corpo.url) });
+    }
+
+    if (rota === '/api/seo' && req.method === 'POST') {
+      const corpo = JSON.parse((await lerCorpo(req)).toString('utf8'));
+      return json(res, 200, { ok: true, ...geraSeo(corpo) });
     }
 
     if (rota === '/api/gerar' && req.method === 'POST') {
@@ -476,7 +812,30 @@ const servidor = http.createServer(async (req, res) => {
   }
 });
 
+/** Abre o painel no navegador padrao. SEM_NAVEGADOR=1 desliga. */
+function abrePainel(url) {
+  if (process.env.SEM_NAVEGADOR) return;
+  const [cmd, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]]
+    : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+  execFile(cmd, args, () => {});
+}
+
+const ENDERECO = `http://localhost:${PORT}`;
+
+servidor.on('error', (erro) => {
+  if (erro.code !== 'EADDRINUSE') throw erro;
+  // O painel ja esta aberto em outra janela: so mostra de novo.
+  console.log(`O painel ja esta rodando em ${ENDERECO} (abrindo no navegador).`);
+  abrePainel(ENDERECO);
+  setTimeout(() => process.exit(0), 1500);
+});
+
 servidor.listen(PORT, () => {
-  console.log(`Gerador de Presell de Cookies rodando em http://localhost:${PORT}`);
-  console.log(`Saidas em: ${DIR_SAI}`);
+  console.log('');
+  console.log(`  Gerador de Presell de Cookies rodando em ${ENDERECO}`);
+  console.log(`  Presells salvas em: ${DIR_SAI}`);
+  console.log('');
+  console.log('  Deixe esta janela aberta enquanto usa o painel. Para desligar, feche-a.');
+  console.log('');
+  abrePainel(ENDERECO);
 });

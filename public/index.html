@@ -212,6 +212,10 @@
   }
   .btn-perigo:hover { background: rgba(248,113,113,.09); border-color: #5a2f34; color: var(--vermelho); }
 
+  .caixa-seo { border: 1px solid var(--linha); border-radius: 10px; padding: 14px; margin-top: 14px;
+              background: rgba(255,255,255,.02); }
+  .titulo-seo { font-size: 12.5px; font-weight: 600; color: var(--fraco); text-transform: uppercase;
+                letter-spacing: .04em; margin-bottom: 12px; }
   .recado { margin-top: 13px; font-size: 13px; min-height: 20px; }
   .recado a { color: var(--acento); font-weight: 550; }
   .erro   { color: var(--vermelho); }
@@ -308,16 +312,6 @@
           <div class="dica">Os dois botões do popup — aceitar e recusar — levam para este link.</div>
         </div>
 
-        <div class="campo">
-          <label for="titulo">Título da página</label>
-          <input type="text" id="titulo" maxlength="255" placeholder="Ex.: KatuChef — Titanium Cutting Board">
-        </div>
-
-        <div class="campo">
-          <label for="metadescricao">Meta descrição</label>
-          <input type="text" id="metadescricao" maxlength="255" placeholder="Descrição que aparece no Google">
-        </div>
-
         <div class="grade2">
           <div class="campo"><label for="pais">País</label><select id="pais"></select></div>
           <div class="campo"><label for="idioma">Idioma</label><select id="idioma"><option value="">—</option></select></div>
@@ -329,6 +323,18 @@
     <div class="cartao">
       <div class="cabeca"><span class="num">2</span><h2>Imagens do site</h2><span class="nota">fundo borrado</span></div>
       <div class="corpo">
+        <div class="campo">
+          <label for="site">Endereço do site</label>
+          <div style="display:flex;gap:8px">
+            <input type="url" id="site" placeholder="https://..." autocomplete="off" style="flex:1">
+            <button class="btn-fantasma" id="btn-print" style="white-space:nowrap">Puxar prints</button>
+          </div>
+          <div class="dica" id="status-print">
+            Tira os três prints e busca o favicon, sem abrir janela nenhuma. Trocando de
+            idioma, cole o endereço daquele idioma e puxe de novo.
+          </div>
+        </div>
+
         <div class="zonas">
           <div class="zona" data-campo="desktop">
             <span class="selo">✓</span><button class="tirar" title="Remover">×</button>
@@ -432,7 +438,63 @@
           <span class="rotulo">Link de Termos de Uso<small>texto pronto no idioma, abre em modal</small></span>
         </label>
 
+        <div class="caixa-seo">
+          <div class="titulo-seo">Gerar o SEO a partir dos dados do produto</div>
+
+          <div class="campo">
+            <label for="seo-produto">Nome do produto</label>
+            <input type="text" id="seo-produto" placeholder="Ex.: KatuChef">
+          </div>
+
+          <div class="grade2">
+            <div class="campo"><label for="seo-preco">Preço</label><input type="text" id="seo-preco" placeholder="Ex.: 49,90"></div>
+            <div class="campo"><label for="seo-moeda">Moeda</label><select id="seo-moeda"></select></div>
+          </div>
+
+          <div class="grade2">
+            <div class="campo">
+              <label for="seo-garantia">Garantia</label>
+              <select id="seo-garantia">
+                <option value="">Sem garantia</option>
+                <option value="30" selected>30 dias</option>
+                <option value="60">60 dias</option>
+                <option value="90">90 dias</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="seo-desconto">Desconto máximo (%)</label>
+              <input type="text" id="seo-desconto" inputmode="numeric" placeholder="Ex.: 50">
+            </div>
+          </div>
+
+          <label class="switch">
+            <input type="checkbox" id="seo-fretegratis"><span class="trilho"></span>
+            <span class="rotulo">Frete grátis<small>desligado, o texto fala em frete rápido</small></span>
+          </label>
+
+          <div class="campo" id="campo-custofrete" style="margin-top:10px">
+            <label for="seo-custofrete">Custo do frete</label>
+            <input type="text" id="seo-custofrete" inputmode="decimal" placeholder="Ex.: 4,95">
+            <div class="dica">Só entra no esquema markup. Em branco, o frete fica de fora dele.</div>
+          </div>
+
+          <div class="dica" id="seo-alvo" style="margin:10px 0 12px"></div>
+
+          <button class="btn-fantasma" id="btn-seo">Gerar SEO</button>
+          <span class="recado" id="status-seo" style="margin-left:10px"></span>
+        </div>
+
         <div class="campo" style="margin-top:14px">
+          <label for="titulo">Título da página</label>
+          <input type="text" id="titulo" maxlength="255" placeholder="Sai pronto ao gerar o SEO">
+        </div>
+
+        <div class="campo">
+          <label for="metadescricao">Meta descrição</label>
+          <input type="text" id="metadescricao" maxlength="255" placeholder="Sai pronta ao gerar o SEO">
+        </div>
+
+        <div class="campo">
           <label for="seo">Conteúdo de SEO (HTML)</label>
           <textarea id="seo" rows="4" placeholder="&lt;h2&gt;Sobre o produto&lt;/h2&gt;&lt;p&gt;...&lt;/p&gt;"></textarea>
           <div class="dica">Aparece no modal do link “Learn More”.</div>
@@ -440,7 +502,7 @@
 
         <div class="campo">
           <label for="taggoogle">Esquema Markup</label>
-          <textarea id="taggoogle" rows="4" placeholder="Cole o script inteiro"></textarea>
+          <textarea id="taggoogle" rows="4" placeholder="Sai pronto ao gerar o SEO"></textarea>
         </div>
 
         <div class="campo">
@@ -464,6 +526,11 @@
       <div class="corpo">
         <button class="btn-principal" id="btn-gerar">Gerar presell</button>
         <div class="recado" id="status-gerar"></div>
+        <div class="dica" style="margin-top:12px">
+          O formulário e as imagens ficam guardados neste navegador, então a próxima
+          presell começa preenchida.
+          <a href="#" id="limpar-tudo">Limpar tudo</a>
+        </div>
       </div>
     </div>
   </div>
@@ -508,16 +575,20 @@
 <script>
 const $ = (s) => document.querySelector(s);
 const imagens = {};          // { desktop|tablet|mobile|favicon: dataURL }
-let TEXTOS = {}, PAISES = [], IDIOMAS_POR_PAIS = {};
+let TEXTOS = {}, PAISES = [], IDIOMAS_POR_PAIS = {}, MOEDAS_POR_PAIS = {};
 
 /* ------------------------------------------------------------------ carregar */
 async function iniciar() {
   const d = await (await fetch('/api/dados')).json();
   PAISES = d.paises; IDIOMAS_POR_PAIS = d.idiomasPorPais; TEXTOS = d.textos;
+  MOEDAS_POR_PAIS = d.moedas;
+  montaMoedas();
 
   $('#pais').innerHTML = PAISES.map((p) => `<option value="${p.code}">${p.nome}</option>`).join('');
   $('#pais').value = 'us';
   atualizaIdiomas();
+  restauraFormulario();
+  await restauraImagens();
   $('#rodape-porta').textContent = location.host;
   await carregaLista();
   agendaPreview();
@@ -528,6 +599,7 @@ function atualizaIdiomas() {
   const langs = IDIOMAS_POR_PAIS[pais] || {};
   $('#idioma').innerHTML = Object.entries(langs)
     .map(([c, n]) => `<option value="${c}">${n} [${c}]</option>`).join('') || '<option value="en">Inglês [en]</option>';
+  atualizaMoedaSeo();
   aoTrocarIdioma();
 }
 
@@ -543,6 +615,7 @@ function aoTrocarIdioma() {
     $('#botaook').value     = base.botaoOk;
     $('#botaonok').value    = base.botaoNok;
   }
+  atualizaAlvoSeo();
   agendaPreview();
 }
 
@@ -562,6 +635,7 @@ document.querySelectorAll('.zona').forEach((zona) => {
     zona.classList.remove('cheia');
     zona.querySelector('.icone').outerHTML = `<span class="icone">${zona.dataset.emoji}</span>`;
     zona.querySelector('.info').textContent = zona.dataset.info;
+    salvaImagens();
     agendaPreview();
   });
 
@@ -588,6 +662,7 @@ function recebeArquivo(zona, campo, arquivo) {
     zona.classList.add('cheia');
     zona.querySelector('.icone').outerHTML = `<img class="icone" src="${leitor.result}" alt="">`;
     zona.querySelector('.info').textContent = `${arquivo.name.slice(0, 16)} · ${kb} KB`;
+    salvaImagens();
     agendaPreview();
   };
   leitor.readAsDataURL(arquivo);
@@ -677,6 +752,11 @@ $('#btn-gerar').addEventListener('click', async () => {
   if (!/^https?:\/\//i.test(cfg.linkAfiliado)) {
     status.className = 'recado erro'; status.textContent = '⚠ Informe o link de afiliado (com https://).'; return;
   }
+  if (!cfg.titulo) {
+    status.className = 'recado erro';
+    status.textContent = '⚠ Falta o título da página. Clique em Gerar SEO no passo 4.';
+    return;
+  }
   for (const [campo, rotulo] of [['desktop', 'desktop'], ['tablet', 'tablet'], ['mobile', 'celular']]) {
     if (!imagens[campo]) { status.className = 'recado erro'; status.textContent = `⚠ Falta a imagem de ${rotulo}.`; return; }
   }
@@ -734,6 +814,57 @@ async function apagar(slug) {
 /* ---------------------------------------------------------------- eventos */
 $('#pais').addEventListener('change', atualizaIdiomas);
 $('#idioma').addEventListener('change', aoTrocarIdioma);
+/* Mostra uma imagem recebida na zona correspondente, como se tivesse sido arrastada. */
+function mostraImagem(campo, dataUrl, rotulo) {
+  imagens[campo] = dataUrl;
+  const zona = document.querySelector(`.zona[data-campo="${campo}"]`);
+  if (!zona) return;
+  zona.classList.add('cheia');
+  zona.querySelector('.icone').outerHTML = `<img class="icone" src="${dataUrl}" alt="">`;
+  zona.querySelector('.info').textContent = rotulo;
+}
+
+$('#btn-print').addEventListener('click', async () => {
+  const botao = $('#btn-print'), recado = $('#status-print');
+  const url = $('#site').value.trim();
+  if (!/^https?:\/\//i.test(url)) {
+    recado.className = 'recado erro'; recado.textContent = '⚠ Informe o endereço do site (com https://).'; return;
+  }
+  botao.disabled = true;
+  recado.className = 'recado'; recado.textContent = 'Abrindo o site e tirando os prints…';
+  try {
+    const r = await fetch('/api/capturar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.erro || 'falhou');
+    let contagem = 0;
+    for (const [campo, dataUrl] of Object.entries(d.imagens)) {
+      if (!dataUrl) continue;
+      mostraImagem(campo, dataUrl, campo === 'favicon' ? 'do site' : 'print do site');
+      contagem++;
+    }
+    salvaImagens();
+    recado.className = 'recado ok';
+    recado.textContent = d.imagens.favicon
+      ? 'Três prints e o favicon prontos.'
+      : 'Três prints prontos. O site não declara favicon.';
+    if (!contagem) recado.textContent = 'Nada veio do site.';
+    agendaPreview();
+  } catch (e) {
+    recado.className = 'recado erro'; recado.textContent = '⚠ ' + e.message;
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+$('#limpar-tudo').addEventListener('click', (e) => { e.preventDefault(); limpaTudo(); });
+
+$('#seo-fretegratis').addEventListener('change', (e) => {
+  $('#campo-custofrete').hidden = e.target.checked;
+});
+
 $('#editartextos').addEventListener('change', (e) => {
   $('#campos-textos').hidden = !e.target.checked;
   if (!e.target.checked) aoTrocarIdioma();
@@ -744,10 +875,161 @@ document.querySelectorAll('input[type=color]').forEach((c) => {
   c.addEventListener('input', () => { c.nextElementSibling.textContent = c.value.toUpperCase(); });
 });
 document.querySelectorAll('input, select, textarea').forEach((el) => {
-  el.addEventListener('input', agendaPreview);
-  el.addEventListener('change', agendaPreview);
+  el.addEventListener('input', () => { salvaFormulario(); agendaPreview(); });
+  el.addEventListener('change', () => { salvaFormulario(); agendaPreview(); });
 });
 window.addEventListener('resize', agendaPreview);
+
+
+/* --------------------------------------------------------------- persistência */
+/* O formulário fica no navegador para a próxima presell: normalmente muda só o país.
+   Os campos vão no localStorage; as imagens, grandes demais para ele, no IndexedDB. */
+const CHAVE = 'presell-cookies:formulario';
+
+const camposSalvaveis = () =>
+  document.querySelectorAll('.layout input[id], .layout select[id], .layout textarea[id]');
+
+function salvaFormulario() {
+  try {
+    const dados = {};
+    camposSalvaveis().forEach((el) => {
+      dados[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    localStorage.setItem(CHAVE, JSON.stringify(dados));
+  } catch { /* navegador sem espaço ou em aba anônima: segue sem salvar */ }
+}
+
+function aplicaFormulario(dados) {
+  // País e idioma primeiro: eles remontam listas e reescrevem os textos do popup.
+  if (dados.pais) { $('#pais').value = dados.pais; atualizaIdiomas(); }
+  if (dados.idioma) { $('#idioma').value = dados.idioma; aoTrocarIdioma(); }
+
+  camposSalvaveis().forEach((el) => {
+    const v = dados[el.id];
+    if (v === undefined) return;
+    if (el.type === 'checkbox') el.checked = v; else el.value = v;
+  });
+
+  // Campos que aparecem ou somem conforme um interruptor.
+  $('#campos-textos').hidden = !$('#editartextos').checked;
+  $('#campo-custofrete').hidden = $('#seo-fretegratis').checked;
+  document.querySelectorAll('input[type=color]').forEach((c) => {
+    c.nextElementSibling.textContent = c.value.toUpperCase();
+  });
+  $('#blur-valor').textContent = $('#blur').value + 'px';
+  $('#opacidade-valor').textContent = $('#opacidade').value + '%';
+  atualizaAlvoSeo();
+}
+
+function restauraFormulario() {
+  try {
+    const salvo = localStorage.getItem(CHAVE);
+    if (salvo) aplicaFormulario(JSON.parse(salvo));
+  } catch { /* dado corrompido: começa do zero */ }
+}
+
+/* As imagens ficam no IndexedDB, que aguenta o tamanho de três prints. */
+function bancoImagens() {
+  return new Promise((ok, erro) => {
+    const p = indexedDB.open('presell-cookies', 1);
+    p.onupgradeneeded = () => p.result.createObjectStore('imagens');
+    p.onsuccess = () => ok(p.result);
+    p.onerror = () => erro(p.error);
+  });
+}
+
+async function salvaImagens() {
+  try {
+    const bd = await bancoImagens();
+    bd.transaction('imagens', 'readwrite').objectStore('imagens').put({ ...imagens }, 'atual');
+  } catch { /* sem IndexedDB: as imagens só valem para esta aba */ }
+}
+
+async function restauraImagens() {
+  try {
+    const bd = await bancoImagens();
+    const pedido = bd.transaction('imagens').objectStore('imagens').get('atual');
+    const guardadas = await new Promise((ok) => { pedido.onsuccess = () => ok(pedido.result); pedido.onerror = () => ok(null); });
+    if (!guardadas) return;
+    Object.entries(guardadas).forEach(([campo, dataUrl]) => {
+      if (dataUrl) mostraImagem(campo, dataUrl, 'guardada');
+    });
+  } catch { /* sem IndexedDB: começa sem imagem */ }
+}
+
+function limpaTudo() {
+  try { localStorage.removeItem(CHAVE); } catch { /* nada a limpar */ }
+  bancoImagens()
+    .then((bd) => bd.transaction('imagens', 'readwrite').objectStore('imagens').delete('atual'))
+    .catch(() => { /* nada a limpar */ })
+    .finally(() => location.reload());
+}
+
+/* ------------------------------------------------------------- gerador de SEO */
+/* O SEO sai no idioma que o pais define no passo 1, para casar com o resto da pagina. */
+const NOMES_MOEDA = {
+  ALL: 'Lek albanês', ARS: 'Peso argentino', AUD: 'Dólar australiano', BAM: 'Marco conversível',
+  BGN: 'Lev búlgaro', BRL: 'Real', BYN: 'Rublo bielorrusso', CAD: 'Dólar canadense',
+  CHF: 'Franco suíço', CZK: 'Coroa tcheca', DKK: 'Coroa dinamarquesa', EUR: 'Euro',
+  GBP: 'Libra esterlina', HUF: 'Florim húngaro', ILS: 'Shekel', ISK: 'Coroa islandesa',
+  MDL: 'Leu moldavo', MKD: 'Denar macedônio', MXN: 'Peso mexicano', NOK: 'Coroa norueguesa',
+  NZD: 'Dólar neozelandês', PLN: 'Zloty', RON: 'Leu romeno', RSD: 'Dinar sérvio',
+  RUB: 'Rublo russo', SEK: 'Coroa sueca', UAH: 'Hryvnia', USD: 'Dólar americano',
+};
+
+function montaMoedas() {
+  const codigos = [...new Set(Object.values(MOEDAS_POR_PAIS))].sort();
+  $('#seo-moeda').innerHTML = codigos
+    .map((c) => `<option value="${c}">${c} · ${NOMES_MOEDA[c] || c}</option>`).join('');
+}
+
+/* A moeda acompanha o pais do passo 1; trocar na mao continua valendo ate mudar de pais. */
+function atualizaMoedaSeo() {
+  const m = MOEDAS_POR_PAIS[$('#pais').value];
+  if (m) $('#seo-moeda').value = m;
+}
+
+function atualizaAlvoSeo() {
+  const pais = $('#pais').selectedOptions[0];
+  const idioma = $('#idioma').selectedOptions[0];
+  $('#seo-alvo').textContent = 'Sai em: ' + (pais ? pais.textContent : '—') +
+    ' · ' + (idioma && idioma.value ? idioma.textContent : 'inglês') + ' (vem do passo 1).';
+}
+
+$('#btn-seo').addEventListener('click', async () => {
+  const botao = $('#btn-seo'), recado = $('#status-seo');
+  const produto = $('#seo-produto').value.trim();
+  if (!produto) { recado.className = 'recado erro'; recado.textContent = 'Informe o nome do produto.'; return; }
+  botao.disabled = true; recado.className = 'recado'; recado.textContent = 'Gerando…';
+  try {
+    const r = await fetch('/api/seo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        produto,
+        preco: $('#seo-preco').value.trim(),
+        moeda: $('#seo-moeda').value,
+        custoFrete: $('#seo-custofrete').value.trim(),
+        linkAfiliado: $('#linkafiliado').value.trim(),
+        pais: $('#pais').value,
+        idioma: $('#idioma').value || 'en',
+        garantia: $('#seo-garantia').value.trim(),
+        desconto: $('#seo-desconto').value.trim(),
+        freteGratis: $('#seo-fretegratis').checked,
+      }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.erro || 'falhou');
+    $('#seo').value = d.seo;
+    $('#titulo').value = d.titulo;
+    $('#metadescricao').value = d.meta;
+    $('#taggoogle').value = `<script type="application/ld+json">\n${d.markup}\n<\/script>`;
+    recado.className = 'recado ok';
+    recado.textContent = 'SEO gerado, com título, meta descrição e esquema markup.';
+    agendaPreview();
+  } catch (e) {
+    recado.className = 'recado erro'; recado.textContent = 'Erro: ' + e.message;
+  } finally { botao.disabled = false; }
+});
 
 iniciar();
 </script>
