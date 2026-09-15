@@ -15,6 +15,7 @@ const PORT     = process.env.PORT || 7001;
 const HOST     = process.env.HOST;   // HOST=127.0.0.1 deixa o painel so para o proprio servidor (ex.: atras do nginx)
 const SENHA    = process.env.SENHA || '';   // com SENHA, a API so responde a "Authorization: Bearer <senha>"
 // Sites de outro endereco que podem usar a API (ex.: o painel publicado na Vercel), separados por virgula.
+// ORIGENS=* libera qualquer site.
 const ORIGENS  = (process.env.ORIGENS || '').split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean);
 const RAIZ     = __dirname;
 const DIR_SAI  = path.join(RAIZ, 'saidas');
@@ -730,7 +731,7 @@ const servidor = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const rota = decodeURIComponent(url.pathname);
 
-  if (ORIGENS.includes(req.headers.origin)) {
+  if (req.headers.origin && (ORIGENS.includes('*') || ORIGENS.includes(req.headers.origin))) {
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
     res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE');
