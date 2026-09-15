@@ -9,9 +9,13 @@ const path = require('path');
 const zlib = require('zlib');
 const os   = require('os');
 const { execFile } = require('child_process');
+const crypto = require('crypto');
 
 const PORT     = process.env.PORT || 7001;
 const HOST     = process.env.HOST;   // HOST=127.0.0.1 deixa o painel so para o proprio servidor (ex.: atras do nginx)
+const SENHA    = process.env.SENHA || '';   // com SENHA, a API so responde a "Authorization: Bearer <senha>"
+// Sites de outro endereco que podem usar a API (ex.: o painel publicado na Vercel), separados por virgula.
+const ORIGENS  = (process.env.ORIGENS || '').split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean);
 const RAIZ     = __dirname;
 const DIR_SAI  = path.join(RAIZ, 'saidas');
 const DIR_PUB  = path.join(RAIZ, 'public');
@@ -716,9 +720,28 @@ function serveArquivo(res, arquivo, download) {
   res.end(buf);
 }
 
+/** Compara a senha em tempo constante (o hash iguala os tamanhos). */
+function senhaConfere(cabecalho) {
+  const hash = (s) => crypto.createHash('sha256').update(String(s || '')).digest();
+  return crypto.timingSafeEqual(hash(cabecalho), hash('Bearer ' + SENHA));
+}
+
 const servidor = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const rota = decodeURIComponent(url.pathname);
+
+  if (ORIGENS.includes(req.headers.origin)) {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE');
+    res.setHeader('Vary', 'Origin');
+  }
+  if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+
+  // As paginas em /p/ ficam abertas: sao as presells prontas, feitas para serem publicas.
+  if (SENHA && (rota.startsWith('/api/') || rota.startsWith('/download/')) && !senhaConfere(req.headers.authorization)) {
+    return json(res, 401, { ok: false, erro: 'Senha incorreta' });
+  }
 
   try {
     if (rota === '/' || rota === '/index.html') {

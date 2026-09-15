@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gerador de Presell de Cookies</title>
+<script src="config.js"></script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍪</text></svg>">
 <style>
   :root {
@@ -216,6 +217,19 @@
               background: rgba(255,255,255,.02); }
   .titulo-seo { font-size: 12.5px; font-weight: 600; color: var(--fraco); text-transform: uppercase;
                 letter-spacing: .04em; margin-bottom: 12px; }
+  /* ------------------------------------------------------------- login */
+  #login {
+    position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px;
+    background: rgba(9,13,18,.92); backdrop-filter: blur(6px);
+  }
+  #login form {
+    width: 100%; max-width: 340px; padding: 26px; border-radius: var(--raio);
+    background: var(--painel); border: 1px solid var(--linha-forte); box-shadow: var(--sombra);
+  }
+  #login h2 { margin: 0 0 4px; font-size: 16px; }
+  #login p { margin: 0 0 16px; color: var(--suave); font-size: 13px; }
+  #login input { margin-bottom: 12px; }
+
   .recado { margin-top: 13px; font-size: 13px; min-height: 20px; }
   .recado a { color: var(--acento); font-weight: 550; }
   .erro   { color: var(--vermelho); }
@@ -286,6 +300,16 @@
 </style>
 </head>
 <body>
+
+<div id="login" hidden>
+  <form>
+    <h2>🍪 Entrar no painel</h2>
+    <p>Digite a senha de acesso.</p>
+    <input type="password" id="login-senha" autocomplete="current-password" placeholder="Senha" required>
+    <button class="btn-principal" type="submit">Entrar</button>
+    <div class="recado erro" id="login-recado"></div>
+  </form>
+</div>
 
 <header>
   <span class="marca">🍪</span>
@@ -574,12 +598,56 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
+
+/* ------------------------------------------------------------------ servidor */
+/* Servido pelo proprio servidor, a API esta no mesmo endereco. Publicado em outro lugar
+   (Vercel), o config.js aponta API_URL para o servidor. */
+const API = (window.API_URL || '').replace(/\/+$/, '');
+const CHAVE_SENHA = 'presell-cookies:senha';
+let senha = '';
+try { senha = localStorage.getItem(CHAVE_SENHA) || ''; } catch { /* sem localStorage: pede a senha a cada visita */ }
+
+async function api(caminho, opcoes = {}) {
+  const r = await fetch(API + caminho, { ...opcoes, headers: { ...opcoes.headers, Authorization: 'Bearer ' + senha } });
+  if (r.status === 401) {
+    pedeSenha(senha ? 'Senha incorreta.' : '');
+    throw new Error('Entre com a senha para continuar');
+  }
+  return r;
+}
+
+function pedeSenha(recado) {
+  $('#login-recado').textContent = recado;
+  $('#login').hidden = false;
+  $('#login-senha').focus();
+}
+
+$('#login form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  senha = $('#login-senha').value;
+  try { localStorage.setItem(CHAVE_SENHA, senha); } catch { /* fica so nesta aba */ }
+  $('#login').hidden = true;
+  if (!iniciado) iniciar().catch(() => {});
+});
+
+/* O .zip vem por fetch (com a senha no cabecalho) e e salvo a partir de um blob. */
+async function baixaZip(slug) {
+  const r = await api('/download/' + slug + '.zip');
+  if (!r.ok) return;
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(await r.blob());
+  link.download = slug + '.zip';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+}
 const imagens = {};          // { desktop|tablet|mobile|favicon: dataURL }
 let TEXTOS = {}, PAISES = [], IDIOMAS_POR_PAIS = {}, MOEDAS_POR_PAIS = {};
+let iniciado = false;
 
 /* ------------------------------------------------------------------ carregar */
 async function iniciar() {
-  const d = await (await fetch('/api/dados')).json();
+  const d = await (await api('/api/dados')).json();
+  iniciado = true;
   PAISES = d.paises; IDIOMAS_POR_PAIS = d.idiomasPorPais; TEXTOS = d.textos;
   MOEDAS_POR_PAIS = d.moedas;
   montaMoedas();
@@ -589,7 +657,7 @@ async function iniciar() {
   atualizaIdiomas();
   restauraFormulario();
   await restauraImagens();
-  $('#rodape-porta').textContent = location.host;
+  $('#rodape-porta').textContent = API ? new URL(API).host : location.host;
   await carregaLista();
   agendaPreview();
 }
@@ -723,7 +791,7 @@ async function atualizaPreview() {
   const cfg = montaConfig();
   if (!cfg.linkAfiliado) cfg.linkAfiliado = '#';
 
-  const r = await fetch('/api/preview', {
+  const r = await api('/api/preview', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ config: cfg, imagens }),
   });
@@ -764,14 +832,14 @@ $('#btn-gerar').addEventListener('click', async () => {
   $('#btn-gerar').disabled = true;
   status.className = 'recado'; status.textContent = 'Gerando…';
   try {
-    const r = await fetch('/api/gerar', {
+    const r = await api('/api/gerar', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ config: cfg, imagens }),
     });
     const res = await r.json();
     if (!res.ok) throw new Error(res.erro || 'Falha ao gerar');
     status.className = 'recado ok';
-    status.innerHTML = `✓ Pronto! <a href="/p/${res.slug}/" target="_blank">abrir página</a> · <a href="/download/${res.slug}.zip">baixar .zip</a>`;
+    status.innerHTML = `✓ Pronto! <a href="${API}/p/${res.slug}/" target="_blank">abrir página</a> · <a href="#" onclick="baixaZip('${res.slug}'); return false">baixar .zip</a>`;
     await carregaLista();
   } catch (e) {
     status.className = 'recado erro'; status.textContent = '⚠ ' + e.message;
@@ -782,7 +850,7 @@ $('#btn-gerar').addEventListener('click', async () => {
 
 /* ---------------------------------------------------------------- lista */
 async function carregaLista() {
-  const itens = await (await fetch('/api/presells')).json();
+  const itens = await (await api('/api/presells')).json();
   $('#contador').textContent = itens.length ? `${itens.length} página${itens.length > 1 ? 's' : ''}` : '';
   if (!itens.length) {
     $('#lista').innerHTML = '<div class="vazio"><span class="grande">📂</span>Nenhuma presell gerada ainda.</div>';
@@ -790,9 +858,9 @@ async function carregaLista() {
   }
   $('#lista').innerHTML = itens.map((i) => `
     <div class="item">
-      <img class="capa" src="/p/${i.slug}/${(i.arquivos && i.arquivos.desktop) || ''}" alt="" onerror="this.style.visibility='hidden'">
+      <img class="capa" src="${API}/p/${i.slug}/${(i.arquivos && i.arquivos.desktop) || ''}" alt="" onerror="this.style.visibility='hidden'">
       <div class="meio">
-        <a class="titulo" href="/p/${i.slug}/" target="_blank">${i.titulo || i.slug}</a>
+        <a class="titulo" href="${API}/p/${i.slug}/" target="_blank">${i.titulo || i.slug}</a>
         <div class="linha-meta">
           <span class="pill destaque">${(i.pais || '').toUpperCase()} · ${i.idioma || ''}</span>
           <span class="pill">${i.slug}</span>
@@ -800,14 +868,14 @@ async function carregaLista() {
         </div>
       </div>
       <div class="acoes">
-        <a href="/download/${i.slug}.zip"><button class="btn-fantasma">↓ ZIP</button></a>
+        <button class="btn-fantasma" onclick="baixaZip('${i.slug}')">↓ ZIP</button>
         <button class="btn-perigo" onclick="apagar('${i.slug}')">Excluir</button>
       </div>
     </div>`).join('');
 }
 
 async function apagar(slug) {
-  await fetch('/api/presells/' + slug, { method: 'DELETE' });
+  await api('/api/presells/' + slug, { method: 'DELETE' });
   carregaLista();
 }
 
@@ -833,7 +901,7 @@ $('#btn-print').addEventListener('click', async () => {
   botao.disabled = true;
   recado.className = 'recado'; recado.textContent = 'Abrindo o site e tirando os prints…';
   try {
-    const r = await fetch('/api/capturar', {
+    const r = await api('/api/capturar', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     });
@@ -1002,7 +1070,7 @@ $('#btn-seo').addEventListener('click', async () => {
   if (!produto) { recado.className = 'recado erro'; recado.textContent = 'Informe o nome do produto.'; return; }
   botao.disabled = true; recado.className = 'recado'; recado.textContent = 'Gerando…';
   try {
-    const r = await fetch('/api/seo', {
+    const r = await api('/api/seo', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         produto,
@@ -1031,7 +1099,7 @@ $('#btn-seo').addEventListener('click', async () => {
   } finally { botao.disabled = false; }
 });
 
-iniciar();
+iniciar().catch(() => { /* sem senha: a tela de login ja esta aberta */ });
 </script>
 </body>
 </html>

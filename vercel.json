@@ -1,0 +1,6 @@
+{
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "node vercel-config.js",
+  "outputDirectory": "public"
+}
