@@ -11,6 +11,7 @@ const os   = require('os');
 const { execFile } = require('child_process');
 
 const PORT     = process.env.PORT || 7001;
+const HOST     = process.env.HOST;   // HOST=127.0.0.1 deixa o painel so para o proprio servidor (ex.: atras do nginx)
 const RAIZ     = __dirname;
 const DIR_SAI  = path.join(RAIZ, 'saidas');
 const DIR_PUB  = path.join(RAIZ, 'public');
@@ -830,7 +831,7 @@ servidor.on('error', (erro) => {
   setTimeout(() => process.exit(0), 1500);
 });
 
-servidor.listen(PORT, () => {
+servidor.listen(PORT, HOST, () => {
   console.log('');
   console.log(`  Gerador de Presell de Cookies rodando em ${ENDERECO}`);
   console.log(`  Presells salvas em: ${DIR_SAI}`);
