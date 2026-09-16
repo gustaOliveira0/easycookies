@@ -614,48 +614,67 @@ function achaNavegador() {
   return escolhido;
 }
 
+// O headless se anuncia como "HeadlessChrome", e rastreadores e o Cloudflare respondem 403
+// a isso. Com o user agent de um Chrome comum, a pagina abre normalmente.
+const UA_DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 const UA_TABLET  = 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/604.1';
 const UA_CELULAR = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 
+const CABECALHOS_NAVEGADOR = {
+  'User-Agent': UA_DESKTOP,
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
 const TELAS = [
-  { campo: 'desktop', largura: 1440, altura: 900,  ua: '' },
+  { campo: 'desktop', largura: 1440, altura: 900,  ua: UA_DESKTOP },
   { campo: 'tablet',  largura: 820,  altura: 1180, ua: UA_TABLET },
   { campo: 'mobile',  largura: 390,  altura: 844,  ua: UA_CELULAR },
 ];
 
+/** Paginas de bloqueio e de erro (inclusive a do proprio Chrome) que nao servem de fundo. */
+const PAGINA_BLOQUEADA = /id="main-frame-error"|<title>\s*(\d{3}\b[^<]*|[^<]*(forbidden|access denied|attention required|just a moment|you have been blocked|not found)[^<]*)<\/title>/i;
+
 function rodaNavegador(argumentos) {
   return new Promise((ok, erro) => {
-    execFile(achaNavegador(), argumentos, { timeout: 60000 }, (e, saida, err) => {
+    execFile(achaNavegador(), argumentos, { timeout: 60000, maxBuffer: 64 * 1024 * 1024 }, (e, saida, err) => {
       // O Chrome escreve avisos de GPU e de rede na saida de erro mesmo quando da certo.
       if (e && e.killed) return erro(new Error('O site demorou demais para carregar'));
-      if (e && !/written to file/.test(String(err))) return erro(new Error('Falha ao abrir o site'));
-      ok();
+      if (e && !/written to file/.test(String(err)) && !saida) return erro(new Error('Falha ao abrir o site'));
+      ok(String(saida));
     });
   });
+}
+
+function argsNavegador(tela, perfil) {
+  return [
+    '--headless=new', '--disable-gpu', '--hide-scrollbars', '--mute-audio',
+    '--no-first-run', '--no-default-browser-check', '--disable-extensions',
+    '--disable-blink-features=AutomationControlled',
+    '--user-data-dir=' + perfil,
+    '--window-size=' + tela.largura + ',' + tela.altura,
+    '--user-agent=' + tela.ua,
+  ];
 }
 
 /** Um print de uma tela, devolvido como dataURL. */
 async function print(url, tela, pasta) {
   const arquivo = path.join(pasta, tela.campo + '.png');
-  const args = [
-    '--headless=new', '--disable-gpu', '--hide-scrollbars', '--mute-audio',
-    '--no-first-run', '--no-default-browser-check', '--disable-extensions',
-    '--user-data-dir=' + path.join(pasta, 'perfil'),
-    '--window-size=' + tela.largura + ',' + tela.altura,
-    '--screenshot=' + arquivo,
-  ];
-  if (tela.ua) args.push('--user-agent=' + tela.ua);
-  args.push(url);
-
-  await rodaNavegador(args);
+  await rodaNavegador([...argsNavegador(tela, path.join(pasta, 'perfil')), '--screenshot=' + arquivo, url]);
   if (!fs.existsSync(arquivo)) throw new Error('Nao consegui o print de ' + tela.campo);
   return 'data:image/png;base64,' + fs.readFileSync(arquivo).toString('base64');
+}
+
+/** HTML da pagina depois de rodar o JavaScript, como o Chrome enxerga. */
+function htmlNoNavegador(url, pasta) {
+  return rodaNavegador([...argsNavegador(TELAS[0], path.join(pasta, 'perfil')),
+    '--virtual-time-budget=10000', '--dump-dom', url]);
 }
 
 /** Favicon declarado no HTML da pagina; sem declaracao, tenta o /favicon.ico. */
 async function pegaFavicon(html, urlFinal) {
   const tenta = async (endereco) => {
-    const r = await fetch(endereco, { redirect: 'follow' });
+    const r = await fetch(endereco, { redirect: 'follow', headers: CABECALHOS_NAVEGADOR });
     if (!r.ok) return null;
     const tipo = (r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
     if (!tipo.startsWith('image/')) return null;
@@ -685,18 +704,26 @@ async function capturaSite(endereco) {
 
   let resposta;
   try {
-    resposta = await fetch(url.href, { redirect: 'follow' });
+    resposta = await fetch(url.href, { redirect: 'follow', headers: CABECALHOS_NAVEGADOR });
   } catch {
     throw new Error('Nao consegui abrir o site. Confira o endereco.');
   }
-  if (resposta.status >= 400) throw new Error('O site respondeu ' + resposta.status + '.');
-  const html = await resposta.text();
 
   const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'presell-print-'));
   try {
+    let html = await resposta.text();
+    let destino = resposta.url;
+    if (resposta.status >= 400) {
+      // Protecoes como o Cloudflare barram o fetch do Node mas deixam o Chrome passar:
+      // so e erro se o Chrome tambem cair numa pagina de bloqueio.
+      html = await htmlNoNavegador(url.href, pasta).catch(() => '');
+      if (!html || PAGINA_BLOQUEADA.test(html)) throw new Error('O site respondeu ' + resposta.status + '.');
+      destino = url.href;
+    }
+
     const imagens = {};
-    for (const tela of TELAS) imagens[tela.campo] = await print(resposta.url, tela, pasta);
-    imagens.favicon = await pegaFavicon(html, resposta.url);
+    for (const tela of TELAS) imagens[tela.campo] = await print(destino, tela, pasta);
+    imagens.favicon = await pegaFavicon(html, destino);
     return imagens;
   } finally {
     fs.rmSync(pasta, { recursive: true, force: true });
