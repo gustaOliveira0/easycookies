@@ -592,7 +592,7 @@
 
     <div class="cartao">
       <div class="cabeca"><h2>Presells geradas</h2><span class="nota" id="contador"></span></div>
-      <div class="corpo"><div id="lista"></div></div>
+      <div class="corpo"><div class="recado erro" id="status-lista" hidden></div><div id="lista"></div></div>
     </div>
   </div>
 </div>
@@ -870,14 +870,29 @@ async function carregaLista() {
       </div>
       <div class="acoes">
         <button class="btn-fantasma" onclick="baixaZip('${i.slug}')">↓ ZIP</button>
-        <button class="btn-perigo" onclick="apagar('${i.slug}')">Excluir</button>
+        <button class="btn-perigo" onclick="apagar('${i.slug}', this)">Excluir</button>
       </div>
     </div>`).join('');
 }
 
-async function apagar(slug) {
-  await api('/api/presells/' + slug, { method: 'DELETE' });
-  carregaLista();
+/* Excluir apaga a pasta da presell no servidor. O botao so volta ao normal quando a
+   resposta chega: sem isso uma falha (senha, presell ja apagada) passava em silencio
+   e o item continuava na lista, como se o clique nao tivesse funcionado. */
+async function apagar(slug, botao) {
+  const recado = $('#status-lista');
+  recado.hidden = true;
+  recado.textContent = '';
+  if (botao) { botao.disabled = true; botao.textContent = 'Excluindo…'; }
+  try {
+    const r = await api('/api/presells/' + encodeURIComponent(slug), { method: 'DELETE' });
+    const res = await r.json().catch(() => ({}));
+    if (!r.ok || !res.ok) throw new Error(res.erro || `Falha ao excluir (HTTP ${r.status})`);
+    await carregaLista();
+  } catch (e) {
+    recado.hidden = false;
+    recado.textContent = '⚠ ' + e.message;
+    if (botao) { botao.disabled = false; botao.textContent = 'Excluir'; }
+  }
 }
 
 /* ---------------------------------------------------------------- eventos */

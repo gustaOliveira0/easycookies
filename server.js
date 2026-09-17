@@ -51,8 +51,21 @@ function slugify(s) {
 function slugLivre(base) {
   const b = slugify(base) || 'presell';
   let s = b, i = 2;
-  while (fs.existsSync(path.join(DIR_SAI, s))) s = `${b}-${i++}`;
+  // O sufixo entra dentro do limite de 60: o nome da pasta e a identidade da presell
+  // em todas as rotas, e um nome mais longo seria cortado depois e apontaria para outra.
+  while (fs.existsSync(path.join(DIR_SAI, s))) {
+    const sufixo = `-${i++}`;
+    s = b.slice(0, 60 - sufixo.length).replace(/-+$/, '') + sufixo;
+  }
   return s;
+}
+
+/* Aceita so o nome de uma pasta de presell, como ela foi gravada em saidas/.
+   Passar pelo slugify aqui cortaria nomes de 60 caracteres com sufixo ("...-2")
+   e a rota acabaria mexendo na presell errada; invalido devolve string vazia. */
+function nomePresell(s) {
+  const nome = String(s || '');
+  return /^[a-z0-9][a-z0-9-]*$/.test(nome) ? nome : '';
 }
 
 function json(res, code, obj) {
@@ -822,15 +835,17 @@ const servidor = http.createServer(async (req, res) => {
     }
 
     if (rota.startsWith('/api/presells/') && req.method === 'DELETE') {
-      const slug = slugify(rota.slice('/api/presells/'.length));
-      const dir  = path.join(DIR_SAI, slug);
-      if (dir.startsWith(DIR_SAI) && fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
-      return json(res, 200, { ok: true });
+      const slug = nomePresell(rota.slice('/api/presells/'.length).replace(/\/+$/, ''));
+      if (!slug) return json(res, 400, { ok: false, erro: 'Nome de presell invalido' });
+      const dir = path.join(DIR_SAI, slug);
+      if (!fs.existsSync(dir)) return json(res, 404, { ok: false, erro: 'Presell nao encontrada' });
+      fs.rmSync(dir, { recursive: true, force: true });
+      return json(res, 200, { ok: true, slug });
     }
 
     if (rota.startsWith('/download/') && rota.endsWith('.zip')) {
-      const slug = slugify(rota.slice('/download/'.length, -4));
-      if (!fs.existsSync(path.join(DIR_SAI, slug))) { res.writeHead(404); return res.end('Nao encontrado'); }
+      const slug = nomePresell(rota.slice('/download/'.length, -4));
+      if (!slug || !fs.existsSync(path.join(DIR_SAI, slug))) { res.writeHead(404); return res.end('Nao encontrado'); }
       const buf = zipDePresell(slug);
       res.writeHead(200, {
         'Content-Type': 'application/zip',
@@ -843,8 +858,9 @@ const servidor = http.createServer(async (req, res) => {
     if (rota.startsWith('/p/')) {
       const resto = rota.slice(3);
       const barra = resto.indexOf('/');
-      const slug  = slugify(barra === -1 ? resto : resto.slice(0, barra));
+      const slug  = nomePresell(barra === -1 ? resto : resto.slice(0, barra));
       const rel   = barra === -1 ? 'index.html' : (resto.slice(barra + 1) || 'index.html');
+      if (!slug) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Nao encontrado'); }
       const alvo  = path.join(DIR_SAI, slug, rel);
       if (!path.resolve(alvo).startsWith(path.resolve(DIR_SAI))) { res.writeHead(403); return res.end('Proibido'); }
       if (barra === -1) { res.writeHead(302, { Location: `/p/${slug}/` }); return res.end(); }
