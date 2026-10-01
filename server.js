@@ -176,7 +176,7 @@ function blocoModal(id, rotulo, conteudo) {
                     <button class="faq-toggle" type="button">${esc(rotulo)}</button>
                     <div class="modal-overlay">
                         <div class="modal-content">
-                            <div class="modal-header"><a href="#" class="modal-close">X</a></div>
+                            <div class="modal-header"><button type="button" class="modal-close">X</button></div>
                             <div class="modal-body"><div class="faq-content">${conteudo}</div></div>
                         </div>
                     </div>
@@ -186,10 +186,10 @@ function blocoModal(id, rotulo, conteudo) {
 const CSS_MODAIS = `
         .glp-links { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .glp-links .faq-toggle {
-            background: none; border: 0; padding: 0; margin: 0; color: #777; font-size: 13px;
-            line-height: 1.5; cursor: pointer; text-decoration: none; font-family: inherit;
+            background: none; border: 0; padding: 4px 8px; margin: 0; color: #595959; font-size: 13px;
+            line-height: 1.5; min-height: 28px; cursor: pointer; text-decoration: none; font-family: inherit;
         }
-        .glp-links .faq-toggle:hover, .glp-links .faq-toggle:focus { color: #555; outline: none; }
+        .glp-links .faq-toggle:hover, .glp-links .faq-toggle:focus-visible { color: #222; text-decoration: underline; }
         .glp-links .modal-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
             justify-content: center; align-items: center; z-index: 9999;
@@ -207,7 +207,10 @@ const CSS_MODAIS = `
             position: sticky; top: 0; background: #fff; border-bottom: 1px solid #eee;
             padding: 12px 20px; z-index: 10; display: flex; justify-content: flex-start;
         }
-        .glp-links .modal-close { color: #007bff; text-decoration: none; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .glp-links .modal-close {
+            background: none; border: 0; padding: 4px 8px; min-width: 32px; min-height: 28px;
+            color: #0056b3; font: 600 14px Arial, Helvetica, sans-serif; cursor: pointer;
+        }
         .glp-links .modal-close:hover { text-decoration: underline; }
         .glp-links .modal-body { padding: 20px; }
         .glp-links .faq-content h2 { font-size: 18px; margin: 14px 0 6px; font-weight: 600; }
@@ -258,6 +261,21 @@ function geraHtml(cfg, arqs) {
 
   const htmlLinks = links.length ? `\n            <div class="glp-links">${links.join('\n')}\n            </div>` : '';
 
+  // O print de cada tela e o maior elemento da pagina (o LCP): o preload faz o navegador
+  // pedir a imagem certa junto com o HTML, em vez de esperar o CSS montar o <picture>.
+  // No preview as imagens sao dataURL e ja estao no proprio HTML, entao nao ha o que adiantar.
+  const telas = [
+    [arqs.desktop, '(min-width: 1025px)'],
+    [arqs.tablet,  '(min-width: 768px) and (max-width: 1024px)'],
+    [arqs.mobile,  '(max-width: 767px)'],
+  ];
+  const preloads = telas
+    .filter(([arq]) => arq && !String(arq).startsWith('data:'))
+    .map(([arq, media]) => `\n    <link rel="preload" as="image" href="${esc(arq)}" media="${media}" fetchpriority="high">`)
+    .join('');
+  // Sem favicon o navegador pede /favicon.ico, e o 404 conta como erro no PageSpeed.
+  const favicon = arqs.favicon ? esc(arqs.favicon) : 'data:,';
+
   return `<!DOCTYPE html>
 <html lang="${esc(cfg.idioma)}">
 <head>
@@ -265,8 +283,8 @@ function geraHtml(cfg, arqs) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${esc(cfg.metaDescricao)}">
     <meta name="robots" content="index, follow">
-    <title>${esc(cfg.titulo)}</title>${arqs.favicon ? `
-    <link rel="icon" href="${esc(arqs.favicon)}">` : ''}
+    <title>${esc(cfg.titulo)}</title>
+    <link rel="icon" href="${favicon}">${preloads}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; }
@@ -313,10 +331,10 @@ ${cfg.rastreamento || ''}
 
     <div class="image-container">
       <picture>
-        <source srcset="${esc(arqs.desktop)}" media="(min-width: 1025px)">
-        <source srcset="${esc(arqs.tablet)}"  media="(min-width: 768px) and (max-width: 1024px)">
-        <source srcset="${esc(arqs.mobile)}"  media="(max-width: 767px)">
-        <img class="img-class" src="${esc(arqs.desktop)}" alt="${esc(cfg.titulo)}" fetchpriority="high">
+        <source srcset="${esc(arqs.desktop)}" media="(min-width: 1025px)" width="1440" height="900">
+        <source srcset="${esc(arqs.tablet)}"  media="(min-width: 768px) and (max-width: 1024px)" width="820" height="1180">
+        <source srcset="${esc(arqs.mobile)}"  media="(max-width: 767px)" width="390" height="844">
+        <img class="img-class" src="${esc(arqs.desktop)}" alt="${esc(cfg.titulo)}" width="1440" height="900" fetchpriority="high">
       </picture>
     </div>
 
@@ -369,7 +387,10 @@ function gera(dados) {
     if (!d) throw new Error(`Arquivo invalido em ${chave}`);
     const nome = base + d.ext;
     fs.writeFileSync(path.join(dir, nome), d.buffer);
-    arqs[chave] = nome;
+    // A versao no endereco deixa as imagens em cache por um ano sem risco de mostrar uma
+    // antiga: uma presell refeita com o mesmo nome muda o ?v= junto com a imagem.
+    const versao = crypto.createHash('sha1').update(d.buffer).digest('hex').slice(0, 10);
+    arqs[chave] = `${nome}?v=${versao}`;
   }
 
   const html = geraHtml(cfg, arqs);
@@ -422,6 +443,15 @@ function precoNumerico(preco) {
   return `${inteiro || '0'}.${decimal[1]}`;
 }
 
+/** Nome do pais por extenso no idioma da pagina ("Brasil", "Deutschland", "United Kingdom"). */
+function nomePais(pais, idioma) {
+  const cod = String(pais || '').toUpperCase();
+  if (!cod) return '';
+  try {
+    return new Intl.DisplayNames([idioma, 'en'], { type: 'region' }).of(cod) || cod;
+  } catch { return cod; }
+}
+
 /**
  * Frase do pais no idioma da pagina, ja com preposicao e artigo ("no Brasil", "in der Schweiz").
  * Usa a frase pronta do par pais+idioma; sem ela, encaixa o nome do ICU no padrao do idioma.
@@ -431,11 +461,7 @@ function frasePais(pais, idioma) {
   if (!cod) return '';
   const pronta = (SEO.locais[idioma] || {})[cod];
   if (pronta) return pronta;
-  let nome = cod.toUpperCase();
-  try {
-    nome = new Intl.DisplayNames([idioma, 'en'], { type: 'region' }).of(nome) || nome;
-  } catch { /* ICU sem esse idioma: fica o codigo */ }
-  return (SEO.padraoPais[idioma] || '{pais}').replace('{pais}', nome);
+  return (SEO.padraoPais[idioma] || '{pais}').replace('{pais}', nomePais(cod, idioma));
 }
 
 /** Formata o preco na moeda escolhida quando so vem numero; senao devolve o que foi digitado. */
@@ -458,7 +484,8 @@ function formataPreco(preco, pais, idioma, moedaEscolhida) {
 /**
  * Monta o bloco de SEO (o conteudo do modal "Learn More"), o titulo da pagina e a meta
  * descricao a partir dos dados do produto. Tudo sai no idioma escolhido, com o pais
- * escrito nesse mesmo idioma.
+ * escrito nesse mesmo idioma. O bloco passa de 4000 caracteres de texto mesmo so com o
+ * nome do produto preenchido.
  */
 function geraSeo(d = {}) {
   const idioma = SEO.textos[d.idioma] ? d.idioma : 'en';
@@ -469,62 +496,82 @@ function geraSeo(d = {}) {
   const preco    = formataPreco(d.preco, d.pais, idioma, d.moeda);
   const garantia = String(d.garantia || '').trim();
   const desconto = String(d.desconto || '').replace(/\D/g, ''); // campo livre: fica so o numero
+  const descontoValor = precoNumerico(d.descontoValor)
+    ? formataPreco(precoNumerico(d.descontoValor), d.pais, idioma, d.moeda) : '';
 
   if (!produto) throw new Error('Informe o nome do produto');
 
-  const troca = (s) => esc(String(s)
+  const preenche = (s) => String(s)
     .replace(/\{produto\}/g, produto)
     .replace(/\{emPais\}/g, emPais)
     .replace(/\{preco\}/g, preco)
     .replace(/\{garantia\}/g, garantia)
-    .replace(/\{desconto\}/g, desconto));
+    .replace(/\{desconto\}/g, desconto)
+    .replace(/\{descontoValor\}/g, descontoValor);
+  const troca = (s) => esc(preenche(s));
 
-  // Preco: com valor quando informado, senao a frase generica; o desconto entra depois.
+  // Preco: com valor quando informado, senao a frase generica; os descontos entram depois.
   const rPreco = [preco ? t.rPreco : t.rPrecoSem];
   if (desconto) rPreco.push(t.rDesconto);
+  if (descontoValor) rPreco.push(t.rDescontoValor);
 
   // Entrega: a frase base sempre, e o frete rapido por padrao; marcado, o gratis toma o lugar.
   const rEntrega = [emPais ? t.rEntrega : ''];
   rEntrega.push(d.freteGratis ? t.rFreteGratis : t.rFreteRapido);
 
   const faq = [
-    [t.qProduto,  [t.rProduto]],
-    [t.qPreco,    rPreco],
-    [t.qGarantia, [garantia ? t.rGarantia : t.rGarantiaSem]],
-    [t.qEntrega,  rEntrega],
-    [t.qOnde,     [t.rOnde]],
+    [t.qProduto,    [t.rProduto]],
+    [t.qPreco,      rPreco],
+    [t.qPagamento,  [t.rPagamento]],
+    [t.qGarantia,   [garantia ? t.rGarantia : t.rGarantiaSem]],
+    [t.qEntrega,    rEntrega],
+    [t.qPrazo,      [t.rPrazo]],
+    [t.qOriginal,   [t.rOriginal]],
+    [t.qContato,    [t.rContato]],
+    [t.qAlterar,    [t.rAlterar]],
+    [t.qQuantidade, [t.rQuantidade]],
+    [t.qOnde,       [t.rOnde]],
   ];
+  const lista = (tag, itens) => `<${tag}>${itens.map((i) => `<li>${troca(i)}</li>`).join('')}</${tag}>`;
 
   const linhas = [
     `<h2>${troca(t.tituloSobre)}</h2>`,
     `<p>${troca(t.sobre)}</p>`,
+    `<p>${troca(t.sobre2)}</p>`,
+    `<h2>${troca(t.tituloComo)}</h2>`,
+    `<p>${troca(t.comoIntro)}</p>`,
+    lista('ol', t.passos),
+    `<h2>${troca(t.tituloVantagens)}</h2>`,
+    `<p>${troca(t.vantagensIntro)}</p>`,
+    lista('ul', t.vantagens),
     `<h2>${troca(t.tituloFaq)}</h2>`,
   ];
   for (const [pergunta, respostas] of faq) {
     linhas.push(`<h3>${troca(pergunta)}</h3>`);
     linhas.push(`<p>${troca(respostas.filter(Boolean).join(' '))}</p>`);
   }
+  linhas.push(
+    `<h2>${troca(t.tituloDicas)}</h2>`,
+    lista('ul', t.dicas),
+    `<h2>${troca(t.tituloConclusao)}</h2>`,
+    `<p>${troca(t.conclusao)}</p>`,
+  );
 
   // Titulo e meta vao para campos de texto, entao seguem sem escape de HTML.
-  const simples = (str) => String(str)
-    .replace(/\{produto\}/g, produto)
-    .replace(/\{emPais\}/g, emPais)
-    .replace(/\{preco\}/g, preco)
-    .replace(/\{garantia\}/g, garantia)
-    .replace(/\{desconto\}/g, desconto)
-    .replace(/\s+/g, ' ')
-    .trim();
+  const simples = (str) => preenche(str).replace(/\s+/g, ' ').trim();
 
   // Os mesmos dados do bloco acima entram no titulo e na meta, na ordem de apelo.
   const pedacos = [];
   if (preco) pedacos.push(preco);
   if (desconto) pedacos.push(simples(t.fDesconto));
+  if (descontoValor) pedacos.push(simples(t.fDescontoValor));
   pedacos.push(simples(d.freteGratis ? t.fFreteGratis : t.fFreteRapido));
   if (garantia) pedacos.push(simples(t.fGarantia));
 
-  // Titulo no formato "Produto OFICIAL BR: Economize ate 40% – Preco especial R$ 197 + 90 dias
-  // de garantia". Cada parte so entra se o dado foi preenchido e se ainda couber.
-  const sigla = (SEO.siglas[String(d.pais || '').toLowerCase()] || String(d.pais || '')).toUpperCase();
+  // Titulo no formato "Produto Oficial Brasil: Economize ate 40% – Preco especial R$ 197 + 90 dias
+  // de garantia", com o pais por extenso no idioma da pagina. Cada parte so entra se o dado foi
+  // preenchido e se ainda couber.
+  const pais = nomePais(d.pais, idioma);
   // Garantia e frete vem em caixa de frase, porque a meta tambem os usa; no titulo sobem
   // de caixa, e em ingles sobe cada palavra, como manda o costume do idioma.
   const porPalavra = SEO.tituloEmMaiusculas.includes(idioma);
@@ -533,12 +580,14 @@ function geraSeo(d = {}) {
     : str.charAt(0).toUpperCase() + str.slice(1));
 
   const caudas = [];
+  // Um desconto so no titulo: o percentual, ou o valor quando so ele foi preenchido.
   if (desconto) caudas.push(simples(t.fEconomize));
+  else if (descontoValor) caudas.push(simples(t.fEconomizeValor));
   if (preco) caudas.push(`${simples(t.fPrecoEspecial)} ${preco}`);
   if (garantia) caudas.push(enfase(simples(t.fGarantia)));
   if (d.freteGratis) caudas.push(enfase(simples(t.fFreteGratis)));
 
-  let titulo = [produto, t.fOficial, sigla].filter(Boolean).join(' ');
+  let titulo = [produto, t.fOficial, pais].filter(Boolean).join(' ');
   let postos = 0; // o separador depende de quantas partes entraram, nao da posicao na lista
   for (const c of caudas) {
     const tentativa = `${titulo}${postos === 0 ? ': ' : postos === 1 ? ' – ' : ' + '}${c}`;
@@ -559,7 +608,7 @@ function geraSeo(d = {}) {
 
 /**
  * Esquema markup do produto (JSON-LD). So entra o que foi preenchido: sem preco nao ha
- * oferta, sem garantia nao ha WarrantyPromise, e o frete so aparece com valor conhecido.
+ * oferta, sem garantia nao ha WarrantyPromise, e o frete so aparece quando e gratis.
  */
 function geraMarkup(d, { produto, meta, t }) {
   const valor = precoNumerico(d.preco);
@@ -593,11 +642,10 @@ function geraMarkup(d, { produto, meta, t }) {
 
   oferta.seller = { '@type': 'Organization', name: `${produto} ${t.fLojaOficial}` };
 
-  const frete = d.freteGratis ? '0' : precoNumerico(d.custoFrete);
-  if (frete !== '') {
+  if (d.freteGratis) {
     oferta.shippingDetails = {
       '@type': 'OfferShippingDetails',
-      shippingRate: { '@type': 'MonetaryAmount', value: frete, currency: moeda },
+      shippingRate: { '@type': 'MonetaryAmount', value: '0', currency: moeda },
     };
   }
 
@@ -745,21 +793,32 @@ async function capturaSite(endereco) {
 
 /* --------------------------------------------------------------------- rotas */
 
-function serveArquivo(res, arquivo, download) {
+/**
+ * Entrega um arquivo do disco. O texto vai comprimido quando o navegador aceita gzip.
+ * `cache` e o Cache-Control; sem ele, nada fica guardado (o painel muda a cada versao).
+ */
+function serveArquivo(req, res, arquivo, cache = 'no-store') {
   if (!fs.existsSync(arquivo) || !fs.statSync(arquivo).isFile()) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     return res.end('Nao encontrado');
   }
-  const buf = fs.readFileSync(arquivo);
-  const cabecalhos = {
-    'Content-Type': MIMES[path.extname(arquivo).toLowerCase()] || 'application/octet-stream',
-    'Content-Length': buf.length,
-    'Cache-Control': 'no-store',
-  };
-  if (download) cabecalhos['Content-Disposition'] = `attachment; filename="${download}"`;
+  const tipo = MIMES[path.extname(arquivo).toLowerCase()] || 'application/octet-stream';
+  let buf = fs.readFileSync(arquivo);
+  const cabecalhos = { 'Content-Type': tipo, 'Cache-Control': cache, 'Vary': 'Accept-Encoding' };
+  if (/^(text\/|application\/(javascript|json)|image\/svg)/.test(tipo)
+      && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+    buf = zlib.gzipSync(buf);
+    cabecalhos['Content-Encoding'] = 'gzip';
+  }
+  cabecalhos['Content-Length'] = buf.length;
   res.writeHead(200, cabecalhos);
   res.end(buf);
 }
+
+/* Nas presells, o HTML e revalidado a cada visita e as imagens (enderecadas com ?v=) ficam
+   um ano em cache, como pede o PageSpeed. */
+const CACHE_PRESELL = (arquivo) => (path.extname(arquivo).toLowerCase() === '.html'
+  ? 'no-cache' : 'public, max-age=31536000, immutable');
 
 /** Compara a senha em tempo constante (o hash iguala os tamanhos). */
 function senhaConfere(cabecalho) {
@@ -786,7 +845,7 @@ const servidor = http.createServer(async (req, res) => {
 
   try {
     if (rota === '/' || rota === '/index.html') {
-      return serveArquivo(res, path.join(DIR_PUB, 'index.html'));
+      return serveArquivo(req, res, path.join(DIR_PUB, 'index.html'));
     }
 
     if (rota === '/api/dados') {
@@ -864,12 +923,12 @@ const servidor = http.createServer(async (req, res) => {
       const alvo  = path.join(DIR_SAI, slug, rel);
       if (!path.resolve(alvo).startsWith(path.resolve(DIR_SAI))) { res.writeHead(403); return res.end('Proibido'); }
       if (barra === -1) { res.writeHead(302, { Location: `/p/${slug}/` }); return res.end(); }
-      return serveArquivo(res, alvo);
+      return serveArquivo(req, res, alvo, CACHE_PRESELL(alvo));
     }
 
     const publico = path.join(DIR_PUB, rota.replace(/^\/+/, ''));
     if (path.resolve(publico).startsWith(path.resolve(DIR_PUB)) && fs.existsSync(publico)) {
-      return serveArquivo(res, publico);
+      return serveArquivo(req, res, publico);
     }
 
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });

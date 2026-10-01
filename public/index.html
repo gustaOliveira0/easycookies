@@ -117,6 +117,9 @@
   }
   .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .grade2 > .campo { margin-bottom: 15px; }
+  .linha-link { display: flex; gap: 8px; }
+  .linha-link input { flex: 1; }
+  .linha-link button { white-space: nowrap; }
 
   /* cor */
   .cor-caixa {
@@ -329,12 +332,18 @@
   <!-- ============================ COLUNA ESQUERDA: FORMULÁRIO ============================ -->
   <div>
     <div class="cartao">
-      <div class="cabeca"><span class="num">1</span><h2>Destino e identificação</h2></div>
+      <div class="cabeca"><span class="num">1</span><h2>Link de afiliado e prints</h2><span class="nota">fundo borrado</span></div>
       <div class="corpo">
         <div class="campo">
           <label for="linkafiliado">Link de afiliado <span class="req">*</span></label>
-          <input type="url" id="linkafiliado" placeholder="https://..." autocomplete="off">
-          <div class="dica">Os dois botões do popup — aceitar e recusar — levam para este link.</div>
+          <div class="linha-link">
+            <input type="url" id="linkafiliado" placeholder="https://..." autocomplete="off">
+            <button class="btn-fantasma" id="btn-print">Puxar prints</button>
+          </div>
+          <div class="dica" id="status-print">
+            Os dois botões do popup levam para este link. Ao colar o link, os três prints e o
+            favicon do site vêm sozinhos; o botão puxa de novo quando precisar.
+          </div>
         </div>
 
         <div class="grade2">
@@ -342,23 +351,6 @@
           <div class="campo"><label for="idioma">Idioma</label><select id="idioma"><option value="">—</option></select></div>
         </div>
         <div id="aviso-idioma"></div>
-      </div>
-    </div>
-
-    <div class="cartao">
-      <div class="cabeca"><span class="num">2</span><h2>Imagens do site</h2><span class="nota">fundo borrado</span></div>
-      <div class="corpo">
-        <div class="campo">
-          <label for="site">Endereço do site</label>
-          <div style="display:flex;gap:8px">
-            <input type="url" id="site" placeholder="https://..." autocomplete="off" style="flex:1">
-            <button class="btn-fantasma" id="btn-print" style="white-space:nowrap">Puxar prints</button>
-          </div>
-          <div class="dica" id="status-print">
-            Tira os três prints e busca o favicon, sem abrir janela nenhuma. Trocando de
-            idioma, cole o endereço daquele idioma e puxe de novo.
-          </div>
-        </div>
 
         <div class="zonas">
           <div class="zona" data-campo="desktop">
@@ -377,7 +369,7 @@
             <input type="file" accept="image/*">
           </div>
         </div>
-        <div class="dica" style="margin-bottom:16px">Clique ou arraste os prints. Formato recomendado: .webp ou .jpg.</div>
+        <div class="dica" style="margin-bottom:16px">Ou clique e arraste os prints. Tudo é convertido para .webp, bem mais leve.</div>
 
         <div class="zonas" style="grid-template-columns: 1fr 2fr; align-items: start;">
           <div class="zona" data-campo="favicon" style="min-height:118px">
@@ -400,12 +392,12 @@
     </div>
 
     <div class="cartao">
-      <div class="cabeca"><span class="num">3</span><h2>Aparência do popup</h2></div>
+      <div class="cabeca"><span class="num">2</span><h2>Aparência do popup</h2></div>
       <div class="corpo">
         <div class="grade2">
           <div class="campo">
             <label for="corbotaook">Botão esquerdo — cor</label>
-            <div class="cor-caixa"><input type="color" id="corbotaook" value="#009900"><span class="hex">#009900</span></div>
+            <div class="cor-caixa"><input type="color" id="corbotaook" value="#008a00"><span class="hex">#008A00</span></div>
           </div>
           <div class="campo">
             <label for="corbotaonok">Botão direito — cor</label>
@@ -452,7 +444,7 @@
     </div>
 
     <div class="cartao">
-      <div class="cabeca"><span class="num">4</span><h2>Políticas, SEO e rastreamento</h2></div>
+      <div class="cabeca"><span class="num">3</span><h2>Políticas, SEO e rastreamento</h2></div>
       <div class="corpo">
         <label class="switch">
           <input type="checkbox" id="politica" checked><span class="trilho"></span>
@@ -478,6 +470,17 @@
 
           <div class="grade2">
             <div class="campo">
+              <label for="seo-desconto">Desconto máximo (%)</label>
+              <input type="text" id="seo-desconto" inputmode="numeric" placeholder="Ex.: 50">
+            </div>
+            <div class="campo">
+              <label for="seo-descontovalor">Desconto máximo (valor)</label>
+              <input type="text" id="seo-descontovalor" inputmode="decimal" placeholder="Ex.: 100,00">
+            </div>
+          </div>
+
+          <div class="grade2" style="align-items:end">
+            <div class="campo">
               <label for="seo-garantia">Garantia</label>
               <select id="seo-garantia">
                 <option value="">Sem garantia</option>
@@ -486,21 +489,10 @@
                 <option value="90">90 dias</option>
               </select>
             </div>
-            <div class="campo">
-              <label for="seo-desconto">Desconto máximo (%)</label>
-              <input type="text" id="seo-desconto" inputmode="numeric" placeholder="Ex.: 50">
-            </div>
-          </div>
-
-          <label class="switch">
-            <input type="checkbox" id="seo-fretegratis"><span class="trilho"></span>
-            <span class="rotulo">Frete grátis<small>desligado, o texto fala em frete rápido</small></span>
-          </label>
-
-          <div class="campo" id="campo-custofrete" style="margin-top:10px">
-            <label for="seo-custofrete">Custo do frete</label>
-            <input type="text" id="seo-custofrete" inputmode="decimal" placeholder="Ex.: 4,95">
-            <div class="dica">Só entra no esquema markup. Em branco, o frete fica de fora dele.</div>
+            <label class="switch campo">
+              <input type="checkbox" id="seo-fretegratis"><span class="trilho"></span>
+              <span class="rotulo">Frete grátis<small>desligado, fala em envio rápido</small></span>
+            </label>
           </div>
 
           <div class="dica" id="seo-alvo" style="margin:10px 0 12px"></div>
@@ -547,7 +539,7 @@
     </div>
 
     <div class="cartao">
-      <div class="cabeca"><span class="num">5</span><h2>Gerar</h2></div>
+      <div class="cabeca"><span class="num">4</span><h2>Gerar</h2></div>
       <div class="corpo">
         <button class="btn-principal" id="btn-gerar">Gerar presell</button>
         <div class="recado" id="status-gerar"></div>
@@ -725,16 +717,45 @@ document.querySelectorAll('.zona').forEach((zona) => {
 
 function recebeArquivo(zona, campo, arquivo) {
   const leitor = new FileReader();
-  leitor.onload = () => {
-    imagens[campo] = leitor.result;
-    const kb = Math.round(arquivo.size / 1024);
-    zona.classList.add('cheia');
-    zona.querySelector('.icone').outerHTML = `<img class="icone" src="${leitor.result}" alt="">`;
-    zona.querySelector('.info').textContent = `${arquivo.name.slice(0, 16)} · ${kb} KB`;
+  leitor.onload = async () => {
+    const pronta = await paraWebp(campo, leitor.result);
+    mostraImagem(campo, pronta, `${arquivo.name.slice(0, 16)} · ${kbDe(pronta)} KB`);
     salvaImagens();
     agendaPreview();
   };
   leitor.readAsDataURL(arquivo);
+}
+
+/* ---------------------------------------------------------------------- webp */
+/* Os prints vao para a presell em .webp: bem mais leves que .png, o que pesa no PageSpeed.
+   Imagens maiores que a tela que cobrem sao reduzidas a essa largura. O favicon fica como
+   veio (.ico e .svg nao passam por canvas), e se o navegador nao gerar webp, ou se o webp
+   sair maior, fica o original. */
+const LARGURA_MAX = { desktop: 1920, tablet: 1180, mobile: 828 };
+const QUALIDADE_WEBP = 0.78;
+
+const kbDe = (dataUrl) => Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 3 / 4 / 1024);
+
+function paraWebp(campo, dataUrl) {
+  if (!LARGURA_MAX[campo]) return Promise.resolve(dataUrl);
+  return new Promise((ok) => {
+    const img = new Image();
+    img.onload = () => {
+      const escala = Math.min(1, LARGURA_MAX[campo] / img.naturalWidth);
+      // Ja e webp do tamanho certo: recomprimir so perderia qualidade.
+      if (escala === 1 && dataUrl.startsWith('data:image/webp')) return ok(dataUrl);
+      const tela = document.createElement('canvas');
+      tela.width = Math.round(img.naturalWidth * escala);
+      tela.height = Math.round(img.naturalHeight * escala);
+      tela.getContext('2d').drawImage(img, 0, 0, tela.width, tela.height);
+      const webp = tela.toDataURL('image/webp', QUALIDADE_WEBP);
+      const virou = webp.startsWith('data:image/webp');
+      const reduziu = escala < 1;
+      ok(virou && (reduziu || webp.length < dataUrl.length) ? webp : dataUrl);
+    };
+    img.onerror = () => ok(dataUrl);
+    img.src = dataUrl;
+  });
 }
 
 /* -------------------------------------------------------------- configuração */
@@ -823,7 +844,7 @@ $('#btn-gerar').addEventListener('click', async () => {
   }
   if (!cfg.titulo) {
     status.className = 'recado erro';
-    status.textContent = '⚠ Falta o título da página. Clique em Gerar SEO no passo 4.';
+    status.textContent = '⚠ Falta o título da página. Clique em Gerar SEO no passo 3.';
     return;
   }
   for (const [campo, rotulo] of [['desktop', 'desktop'], ['tablet', 'tablet'], ['mobile', 'celular']]) {
@@ -908,12 +929,19 @@ function mostraImagem(campo, dataUrl, rotulo) {
   zona.querySelector('.info').textContent = rotulo;
 }
 
-$('#btn-print').addEventListener('click', async () => {
+/* Os prints saem do proprio link de afiliado: colar o link ja puxa os tres prints e o
+   favicon. O botao refaz a captura (outro idioma, site que mudou, falha de rede). */
+let ultimoPuxado = '', puxando = false;
+
+async function puxaPrints(automatico) {
   const botao = $('#btn-print'), recado = $('#status-print');
-  const url = $('#site').value.trim();
+  const url = $('#linkafiliado').value.trim();
   if (!/^https?:\/\//i.test(url)) {
-    recado.className = 'recado erro'; recado.textContent = '⚠ Informe o endereço do site (com https://).'; return;
+    if (!automatico) { recado.className = 'recado erro'; recado.textContent = '⚠ Informe o link de afiliado (com https://).'; }
+    return;
   }
+  if (puxando || (automatico && url === ultimoPuxado)) return;
+  puxando = true; ultimoPuxado = url;
   botao.disabled = true;
   recado.className = 'recado'; recado.textContent = 'Abrindo o site e tirando os prints…';
   try {
@@ -926,28 +954,31 @@ $('#btn-print').addEventListener('click', async () => {
     let contagem = 0;
     for (const [campo, dataUrl] of Object.entries(d.imagens)) {
       if (!dataUrl) continue;
-      mostraImagem(campo, dataUrl, campo === 'favicon' ? 'do site' : 'print do site');
+      const pronta = await paraWebp(campo, dataUrl);
+      mostraImagem(campo, pronta, campo === 'favicon' ? 'do site' : `print · ${kbDe(pronta)} KB`);
       contagem++;
     }
     salvaImagens();
     recado.className = 'recado ok';
     recado.textContent = d.imagens.favicon
-      ? 'Três prints e o favicon prontos.'
-      : 'Três prints prontos. O site não declara favicon.';
+      ? 'Três prints (.webp) e o favicon prontos.'
+      : 'Três prints (.webp) prontos. O site não declara favicon.';
     if (!contagem) recado.textContent = 'Nada veio do site.';
     agendaPreview();
   } catch (e) {
+    ultimoPuxado = '';   // deu errado: colar de novo tenta outra vez
     recado.className = 'recado erro'; recado.textContent = '⚠ ' + e.message;
   } finally {
+    puxando = false;
     botao.disabled = false;
   }
-});
+}
+
+$('#btn-print').addEventListener('click', () => puxaPrints(false));
+$('#linkafiliado').addEventListener('paste', () => setTimeout(() => puxaPrints(true), 0));
+$('#linkafiliado').addEventListener('change', () => puxaPrints(true));
 
 $('#limpar-tudo').addEventListener('click', (e) => { e.preventDefault(); limpaTudo(); });
-
-$('#seo-fretegratis').addEventListener('change', (e) => {
-  $('#campo-custofrete').hidden = e.target.checked;
-});
 
 $('#editartextos').addEventListener('change', (e) => {
   $('#campos-textos').hidden = !e.target.checked;
@@ -996,7 +1027,6 @@ function aplicaFormulario(dados) {
 
   // Campos que aparecem ou somem conforme um interruptor.
   $('#campos-textos').hidden = !$('#editartextos').checked;
-  $('#campo-custofrete').hidden = $('#seo-fretegratis').checked;
   document.querySelectorAll('input[type=color]').forEach((c) => {
     c.nextElementSibling.textContent = c.value.toUpperCase();
   });
@@ -1035,9 +1065,11 @@ async function restauraImagens() {
     const pedido = bd.transaction('imagens').objectStore('imagens').get('atual');
     const guardadas = await new Promise((ok) => { pedido.onsuccess = () => ok(pedido.result); pedido.onerror = () => ok(null); });
     if (!guardadas) return;
-    Object.entries(guardadas).forEach(([campo, dataUrl]) => {
-      if (dataUrl) mostraImagem(campo, dataUrl, 'guardada');
-    });
+    // Imagens guardadas antes do webp (prints em .png) sao convertidas aqui.
+    for (const [campo, dataUrl] of Object.entries(guardadas)) {
+      if (dataUrl) mostraImagem(campo, await paraWebp(campo, dataUrl), 'guardada');
+    }
+    salvaImagens();
   } catch { /* sem IndexedDB: começa sem imagem */ }
 }
 
@@ -1092,7 +1124,7 @@ $('#btn-seo').addEventListener('click', async () => {
         produto,
         preco: $('#seo-preco').value.trim(),
         moeda: $('#seo-moeda').value,
-        custoFrete: $('#seo-custofrete').value.trim(),
+        descontoValor: $('#seo-descontovalor').value.trim(),
         linkAfiliado: $('#linkafiliado').value.trim(),
         pais: $('#pais').value,
         idioma: $('#idioma').value || 'en',

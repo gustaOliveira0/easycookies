@@ -34,45 +34,47 @@ Para quem usa terminal: `npm start` também sobe o painel. Para trocar a porta:
 
 ## Como usar
 
-1. **Destino e identificação** — cole o link de afiliado e escolha país e idioma: os textos do
-   popup, a Política de Privacidade e os Termos de Uso saem prontos no idioma escolhido
-   (42 idiomas). O título da página e a meta descrição ficam no passo 4, logo acima do
-   campo de conteúdo de SEO, e são escritos pelo gerador.
-2. **Imagens** — cole o endereço do site e clique em *Puxar prints*: o servidor abre a
-   página no Chrome em modo headless (nenhuma janela aparece) e tira os três prints, nos
-   tamanhos de desktop, tablet e celular, além de buscar o favicon. Para outro idioma,
-   cole o endereço daquele idioma e puxe de novo. Também dá para arrastar os arquivos na
-   mão. São servidos por `<picture>` com media queries, então cada aparelho recebe a
-   imagem certa. Ajuste o desfoque e o escurecimento do fundo nos sliders.
-3. **Aparência** — cores, bordas e cor do texto de cada botão. Marque *Editar os textos do
+1. **Link de afiliado e prints** — cole o link de afiliado: ele é o destino dos dois botões
+   do popup e também o site dos prints. Ao colar, o servidor abre a página no Chrome em
+   modo headless (nenhuma janela aparece) e tira os três prints, nos tamanhos de desktop,
+   tablet e celular, além de buscar o favicon; *Puxar prints* refaz a captura. Também dá
+   para arrastar os arquivos na mão. Tudo é convertido para `.webp` no navegador (imagens
+   largas demais são reduzidas), e cada aparelho recebe a sua por `<picture>` com media
+   queries. Escolha país e idioma: os textos do popup, a Política de Privacidade e os
+   Termos de Uso saem prontos no idioma escolhido (42 idiomas). Ajuste o desfoque e o
+   escurecimento do fundo nos sliders.
+2. **Aparência** — cores, bordas e cor do texto de cada botão. Marque *Editar os textos do
    popup manualmente* se quiser escrever o texto no lugar do padrão do idioma.
-4. **Políticas, SEO e rastreamento** — ligue/desligue os links de política e termos e cole
+3. **Políticas, SEO e rastreamento** — ligue/desligue os links de política e termos e cole
    os pixels. O SEO sai pronto: preencha nome do produto, preço e moeda, garantia,
-   desconto máximo e a chave de frete grátis, e clique em *Gerar SEO*. Isso escreve
-   quatro coisas no idioma do país escolhido no passo 1: o bloco do modal
-   "Learn More", o título da página, a meta descrição e o esquema markup, nos campos logo
-   acima. Tudo continua editável, e nada impede colar conteúdo próprio no lugar.
+   desconto máximo (em % e/ou em valor) e a chave de frete grátis, e clique em *Gerar SEO*.
+   Isso escreve quatro coisas no idioma do país escolhido no passo 1: o bloco do modal
+   "Learn More" (sempre com mais de 4000 caracteres: sobre, como pedir, vantagens da loja
+   oficial, perguntas frequentes, dicas e conclusão), o título da página, a meta descrição
+   e o esquema markup, nos campos logo abaixo. Tudo continua editável, e nada impede colar
+   conteúdo próprio no lugar.
 
-   O título sai no formato de oferta, com a sigla do país e os dados na ordem de apelo:
+   O título sai no formato de oferta, com o nome do país por extenso no idioma da página
+   e os dados na ordem de apelo:
 
    ```
-   FuelSync Pro OFFICIAL UK: Save Up to 50% – Special Price £29.99 + 30-Day Guarantee
-   KatuChef OFICIAL BR: Economize até 40% – Preço especial R$ 197,00 + 90 dias de garantia
+   FuelSync Pro Official United Kingdom: Save Up to 50% – Special Price £29.99 + 30-Day Guarantee
+   KatuChef Oficial Brasil: Economize até 40% – Preço especial R$ 197,00 + 90 dias de garantia
    ```
 
-   Cada pedaço só entra se o dado foi preenchido e se ainda couber em 110 caracteres. A
-   meta descrição traz os mesmos dados em lista, com o país por extenso, e para em 155.
+   Cada pedaço só entra se o dado foi preenchido e se ainda couber em 110 caracteres. O
+   desconto em valor só vai ao título quando não há o percentual. A meta descrição traz os
+   mesmos dados em lista, com o país por extenso, e para em 155.
 
    O esquema markup sai como JSON-LD do tipo `Product`, com `Offer`, `WarrantyPromise`,
    `OfferShippingDetails` e o vendedor. Cada bloco só aparece com o dado correspondente:
    sem preço não há oferta, sem garantia não há promessa de garantia, e o frete só entra
-   com valor conhecido (zero quando é grátis, ou o que estiver no campo *Custo do frete*).
-   Não há nota nem contagem de avaliações, que seriam dados inventados.
+   quando é grátis. Não há nota nem contagem de avaliações, que seriam dados inventados.
 
-   O preço sai formatado na moeda escolhida (`197` com o Brasil vira `R$ 197,00`). Sem a
-   chave de frete grátis, o texto fala em envio rápido pela transportadora local; com ela,
-   fala em frete grátis.
-5. **Gerar** — a página aparece na lista à direita, com link para abrir e para baixar o `.zip`.
+   O preço e o desconto em valor saem formatados na moeda escolhida (`197` com o Brasil
+   vira `R$ 197,00`). Sem a chave de frete grátis, o texto fala em envio rápido pela
+   transportadora local; com ela, fala em frete grátis.
+4. **Gerar** — a página aparece na lista à direita, com link para abrir e para baixar o `.zip`.
    O formulário e as imagens ficam guardados neste navegador, então a presell seguinte
    começa preenchida: para outro país, basta trocar o país e gerar de novo. *Limpar tudo*,
    embaixo do botão, apaga o que está guardado.
@@ -86,15 +88,21 @@ Cada presell vira uma pasta em `saidas/<slug>/`:
 
 ```
 index.html      página pronta, tudo inline (nenhum CSS/JS externo)
-w.<ext>         imagem desktop     (>= 1025px)
-t.<ext>         imagem tablet      (768–1024px)
-m.<ext>         imagem celular     (<= 767px)
+w.webp          imagem desktop     (>= 1025px)
+t.webp          imagem tablet      (768–1024px)
+m.webp          imagem celular     (<= 767px)
 favicon.<ext>   se enviado
 config.json     configuração usada (não entra no .zip)
 ```
 
 O `.zip` traz esses arquivos prontos para subir na raiz do domínio. Se marcar
 *colocar dentro da pasta do país* (e do idioma), o zip vira `us/en/index.html`, etc.
+
+A página é feita para o PageSpeed: CSS e JS inline, imagens em `.webp` com `preload` da
+imagem de cada tela (o LCP), largura e altura declaradas, favicon sempre presente (sem 404
+no console), contraste e área de toque dos links dentro do mínimo de acessibilidade. As
+imagens levam `?v=<hash>` no endereço, então quem hospeda pode deixá-las em cache por um
+ano; o próprio servidor já faz isso em `/p/` e comprime o HTML com gzip.
 
 ## Prints automáticos
 
