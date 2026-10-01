@@ -184,10 +184,10 @@ function blocoModal(id, rotulo, conteudo) {
 }
 
 const CSS_MODAIS = `
-        .glp-links { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .glp-links { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 0; }
         .glp-links .faq-toggle {
-            background: none; border: 0; padding: 4px 8px; margin: 0; color: #595959; font-size: 13px;
-            line-height: 1.5; min-height: 28px; cursor: pointer; text-decoration: none; font-family: inherit;
+            background: none; border: 0; padding: 2px 8px; margin: 0; color: #595959; font-size: 13px;
+            line-height: 1.5; min-height: 24px; cursor: pointer; text-decoration: none; font-family: inherit;
         }
         .glp-links .faq-toggle:hover, .glp-links .faq-toggle:focus-visible { color: #222; text-decoration: underline; }
         .glp-links .modal-overlay {
